@@ -39,7 +39,7 @@ namespace AlapSB
             return sb.ToString();
         }
 
-        /// <summary>Putar file. Kalau key yang sama sedang main, langsung restart instan dari awal (support spam).</summary>
+        /// <summary>Putar file. Mendukung spam bertumpuk (overlapping): suara lama tetap lanjut sampai habis sambil memutar suara baru.</summary>
         public bool Play(string key, string file, int volume)
         {
             if (string.IsNullOrEmpty(file) || !File.Exists(file))
@@ -50,27 +50,6 @@ namespace AlapSB
             }
 
             int volVal = Math.Max(0, Math.Min(1000, volume * 10));
-
-            // Jika file ini sedang aktif, langsung reset & replay (sangat responsif untuk spam)
-            for (int i = list.Count - 1; i >= 0; i--)
-            {
-                if (list[i].Key == key)
-                {
-                    string existingAlias = list[i].Alias;
-                    Send("seek " + existingAlias + " to start", IntPtr.Zero);
-                    Send("setaudio " + existingAlias + " volume to " + volVal, IntPtr.Zero);
-                    int pr = Send("play " + existingAlias + " from 0 notify", hwnd);
-                    if (pr == 0)
-                    {
-                        Raise();
-                        return true;
-                    }
-                    // Kalau gagal seek/replay, tutup alias lama dan buka baru
-                    Send("close " + existingAlias, IntPtr.Zero);
-                    list.RemoveAt(i);
-                    break;
-                }
-            }
 
             string alias = "alap" + (++counter);
             int r = Open(file, alias);
