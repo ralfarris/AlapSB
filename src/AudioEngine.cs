@@ -39,15 +39,37 @@ namespace AlapSB
             return sb.ToString();
         }
 
-        /// <summary>Putar file. Kalau key yang sama sedang main, diulang dari awal.</summary>
+        /// <summary>Putar file. Kalau key yang sama sedang main, langsung restart instan dari awal (support spam).</summary>
         public bool Play(string key, string file, int volume)
         {
-            StopInternal(key);
             if (string.IsNullOrEmpty(file) || !File.Exists(file))
             {
                 LastError = "File audio tidak ditemukan.";
                 Raise();
                 return false;
+            }
+
+            int volVal = Math.Max(0, Math.Min(1000, volume * 10));
+
+            // Jika file ini sedang aktif, langsung reset & replay (sangat responsif untuk spam)
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                if (list[i].Key == key)
+                {
+                    string existingAlias = list[i].Alias;
+                    Send("seek " + existingAlias + " to start", IntPtr.Zero);
+                    Send("setaudio " + existingAlias + " volume to " + volVal, IntPtr.Zero);
+                    int pr = Send("play " + existingAlias + " from 0 notify", hwnd);
+                    if (pr == 0)
+                    {
+                        Raise();
+                        return true;
+                    }
+                    // Kalau gagal seek/replay, tutup alias lama dan buka baru
+                    Send("close " + existingAlias, IntPtr.Zero);
+                    list.RemoveAt(i);
+                    break;
+                }
             }
 
             string alias = "alap" + (++counter);
@@ -64,7 +86,7 @@ namespace AlapSB
                 return false;
             }
 
-            Send("setaudio " + alias + " volume to " + Math.Max(0, Math.Min(1000, volume * 10)), IntPtr.Zero);
+            Send("setaudio " + alias + " volume to " + volVal, IntPtr.Zero);
             r = Send("play " + alias + " from 0 notify", hwnd);
             if (r != 0)
             {
