@@ -27,6 +27,7 @@ namespace AlapSB
                 }
 
                 try { Native.SetProcessDPIAware(); } catch { }
+                try { Native.SetCurrentProcessExplicitAppUserModelID("Alpha.AlapSB.App.v1"); } catch { }
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 using (var g = Graphics.FromHwnd(IntPtr.Zero)) Theme.Scale = g.DpiX / 96f;

@@ -55,6 +55,9 @@ namespace AlapSB
         [DllImport("psapi.dll")]
         public static extern bool EmptyWorkingSet(IntPtr process);
 
+        [DllImport("shell32.dll", SetLastError = true)]
+        public static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
         public static void DarkTitle(Form f)
         {
             try

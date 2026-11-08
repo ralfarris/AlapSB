@@ -52,8 +52,8 @@ namespace AlapSB
             ClientSize = new Size(S(1000), S(660));
             MinimumSize = new Size(S(820), S(480));
             DoubleBuffered = true;
-            ShowIcon = false;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
+            ShowIcon = true;
 
             BuildUI();
             BuildTray();
