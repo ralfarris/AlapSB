@@ -78,7 +78,8 @@ namespace AlapSB
         readonly int master;
         string filePath;
 
-        readonly InputBox nameBox, fileBox;
+        readonly InputBox nameBox;
+        readonly FlatButton filePickerBtn;
         readonly FlatButton previewBtn;
         readonly KeyCaptureBox keyBox;
         readonly Slider vol;
@@ -107,14 +108,14 @@ namespace AlapSB
             var hint = AddLabel("mp3 · wav · wma · m4a", 0, y + S(2), true);
             hint.Left = x + w - hint.PreferredWidth;
             y += S(26);
-            fileBox = new InputBox();
-            fileBox.Box.ReadOnly = true;
-            fileBox.SetBounds(x, y, w - S(150), S(38));
-            fileBox.Text = DisplayName(filePath);
-            Controls.Add(fileBox);
-            var browse = AddButton("Pilih", G.Folder, BtnKind.Secondary, fileBox.Right + S(8), y, S(94));
-            browse.Click += delegate { Browse(); };
-            previewBtn = AddButton("", G.Play, BtnKind.Secondary, browse.Right + S(8), y, S(40));
+
+            string fileLabel = string.IsNullOrEmpty(filePath) ? "Pilih file audio..." : DisplayName(filePath);
+            filePickerBtn = new FlatButton(fileLabel, G.Folder, BtnKind.Secondary);
+            filePickerBtn.SetBounds(x, y, w - S(48), S(38));
+            filePickerBtn.Click += delegate { Browse(); };
+            Controls.Add(filePickerBtn);
+
+            previewBtn = AddButton("", G.Play, BtnKind.Secondary, filePickerBtn.Right + S(8), y, S(40));
             previewBtn.Click += delegate { Preview(); };
             y += S(54);
 
@@ -186,7 +187,7 @@ namespace AlapSB
                 if (d.ShowDialog(this) != DialogResult.OK) return;
                 string oldAuto = string.IsNullOrEmpty(filePath) ? "" : Path.GetFileNameWithoutExtension(filePath);
                 filePath = d.FileName;
-                fileBox.Text = DisplayName(filePath);
+                filePickerBtn.Text = DisplayName(filePath);
                 string n = nameBox.Text.Trim();
                 if (n.Length == 0 || n == "Suara baru" || n == oldAuto)
                     nameBox.Text = Path.GetFileNameWithoutExtension(filePath);
