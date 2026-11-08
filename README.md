@@ -2,9 +2,16 @@
 
 Soundboard desktop super ringan (~62 KB, tanpa Electron/Chromium) untuk streaming & gaming di Windows.
 
-## Cara Menjalankan
+[![Download Latest Release](https://img.shields.io/github/v/release/ralfarris/AlapSB?label=Download%20AlapSB&style=for-the-badge&color=7c5cff)](https://github.com/ralfarris/AlapSB/releases/latest)
 
-**Via Python:**
+## Cara Menggunakan (Untuk Pengguna Langsung)
+1. Buka halaman [**GitHub Releases**](https://github.com/ralfarris/AlapSB/releases/latest).
+2. Download file **`AlapSB.exe`** (atau `AlapSB-Windows.zip`).
+3. Langsung jalankan aplikasinya (tanpa perlu install apa pun!).
+
+---
+
+## Menjalankan dari Source Code (Developer)
 ```bash
 python run.py
 ```
