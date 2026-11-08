@@ -9,8 +9,11 @@ $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
 $sources = Get-ChildItem (Join-Path $root 'src') -Filter *.cs | ForEach-Object { $_.FullName }
 
+$ico = Join-Path $root 'assets\alapsb.ico'
+$icoParam = if (Test-Path $ico) { "/win32icon:$ico" } else { "" }
+
 & $csc /nologo /target:winexe /optimize+ /platform:anycpu /codepage:65001 `
-    "/out:$dist\AlapSB.exe" "/win32manifest:$root\src\app.manifest" `
+    "/out:$dist\AlapSB.exe" "/win32manifest:$root\src\app.manifest" $icoParam `
     /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll `
     $sources
 if ($LASTEXITCODE -ne 0) { throw "Build gagal ($LASTEXITCODE)" }
