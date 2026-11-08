@@ -5,15 +5,12 @@ $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 if (-not (Test-Path $csc)) { throw 'csc.exe (.NET Framework 4) tidak ditemukan.' }
 
-$ico = Join-Path $root 'assets\alapsb.ico'
-if (-not (Test-Path $ico)) { & (Join-Path $root 'tools\make-icon.ps1') -OutPath $ico }
-
 $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
 $sources = Get-ChildItem (Join-Path $root 'src') -Filter *.cs | ForEach-Object { $_.FullName }
 
 & $csc /nologo /target:winexe /optimize+ /platform:anycpu /codepage:65001 `
-    "/out:$dist\AlapSB.exe" "/win32icon:$ico" "/win32manifest:$root\src\app.manifest" `
+    "/out:$dist\AlapSB.exe" "/win32manifest:$root\src\app.manifest" `
     /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll `
     $sources
 if ($LASTEXITCODE -ne 0) { throw "Build gagal ($LASTEXITCODE)" }

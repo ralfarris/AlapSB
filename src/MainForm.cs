@@ -52,7 +52,7 @@ namespace AlapSB
             ClientSize = new Size(S(1000), S(660));
             MinimumSize = new Size(S(820), S(480));
             DoubleBuffered = true;
-            try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
+            ShowIcon = false;
 
             BuildUI();
             BuildTray();
@@ -157,23 +157,9 @@ namespace AlapSB
             Theme.HQ(g);
             int pad = S(24);
 
-            // logo kecil
-            var logo = new Rectangle(pad, S(22), S(40), S(40));
-            using (var path = Theme.Round(logo, S(11)))
-            using (var b = new System.Drawing.Drawing2D.LinearGradientBrush(logo, Theme.Accent, Theme.Pink, 45f))
-                g.FillPath(b, path);
-            int[] bars = { 10, 18, 24, 18, 10 };
-            float bw = S(3.6f), gap = S(2.6f);
-            float bx = logo.X + (logo.Width - (bars.Length * bw + (bars.Length - 1) * gap)) / 2f;
-            for (int i = 0; i < bars.Length; i++)
-            {
-                float bh = S(bars[i]);
-                Theme.Fill(g, new RectangleF(bx + i * (bw + gap), logo.Y + (logo.Height - bh) / 2f, bw, bh), bw / 2f, Color.White);
-            }
-
             // judul + "by Alpha"
             var titleFont = Theme.UI(20f, FontStyle.Bold);
-            int tx = logo.Right + S(14);
+            int tx = pad;
             var ts = Theme.Measure(g, "AlapSB", titleFont);
             Theme.DrawText(g, "AlapSB", titleFont, Theme.Text, new Rectangle(tx, S(18), ts.Width + S(4), S(40)),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);

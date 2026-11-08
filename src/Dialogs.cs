@@ -14,6 +14,7 @@ namespace AlapSB
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
+            ShowIcon = false;
             StartPosition = FormStartPosition.CenterParent;
             BackColor = Theme.Panel;
             ForeColor = Theme.Text;
