@@ -1,6 +1,6 @@
-# AlapSB · *by Alpha*
+# AlapSB
 
-Soundboard desktop super ringan (~80 KB, tanpa Electron/Chromium) untuk streaming & gaming di Windows.
+Soundboard desktop super ringan (~62 KB, tanpa Electron/Chromium) untuk streaming & gaming di Windows.
 
 ## Cara Menjalankan
 

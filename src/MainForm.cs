@@ -44,7 +44,7 @@ namespace AlapSB
             isAdmin = IsAdmin();
 
             AutoScaleMode = AutoScaleMode.None;
-            Text = "AlapSB  ·  by Alpha";
+            Text = "AlapSB";
             BackColor = Theme.Bg;
             ForeColor = Theme.Text;
             Font = Theme.UI(9f);
@@ -157,19 +157,12 @@ namespace AlapSB
             Theme.HQ(g);
             int pad = S(24);
 
-            // judul + "by Alpha"
+            // judul
             var titleFont = Theme.UI(20f, FontStyle.Bold);
             int tx = pad;
             var ts = Theme.Measure(g, "AlapSB", titleFont);
             Theme.DrawText(g, "AlapSB", titleFont, Theme.Text, new Rectangle(tx, S(18), ts.Width + S(4), S(40)),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
-            var pillFont = Theme.Semi(8f);
-            var ps = Theme.Measure(g, "by Alpha", pillFont);
-            var pill = new Rectangle(tx + ts.Width + S(10), S(28), ps.Width + S(16), S(22));
-            Theme.Fill(g, pill, pill.Height / 2f, Theme.Blend(Theme.Bg, Theme.Accent, 0.2f));
-            Theme.Stroke(g, pill, pill.Height / 2f, Theme.Blend(Theme.Bg, Theme.Accent, 0.45f));
-            Theme.DrawText(g, "by Alpha", pillFont, Theme.AccentSoft, pill,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
 
             Theme.DrawText(g, "Soundboard ringan buat streaming — masukin suara, pilih shortcut, langsung gas.",
                 Theme.UI(9.5f), Theme.Muted, new Rectangle(tx, S(58), header.Width - tx - pad, S(22)),
@@ -220,7 +213,7 @@ namespace AlapSB
             Theme.DrawText(g, left, Theme.UI(8.5f), fl ? Theme.Text : Theme.Muted,
                 new Rectangle(pad + d + S(10), 0, status.Width - pad * 2 - S(220), h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
-            Theme.DrawText(g, "AlapSB v1.0  ·  by Alpha", Theme.Semi(8.5f), Theme.Muted, new Rectangle(0, 0, status.Width - pad, h),
+            Theme.DrawText(g, "AlapSB v1.0", Theme.Semi(8.5f), Theme.Muted, new Rectangle(0, 0, status.Width - pad, h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.SingleLine);
         }
 
@@ -501,7 +494,7 @@ namespace AlapSB
             }
             m.Items.Add("Tentang AlapSB").Click += delegate
             {
-                MessageBox.Show(this, "AlapSB v1.0\nSoundboard ringan untuk streaming.\n\nby Alpha", "Tentang AlapSB",
+                MessageBox.Show(this, "AlapSB v1.0\nSoundboard ringan untuk streaming.", "Tentang AlapSB",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
             m.Items.Add(new ToolStripSeparator());
@@ -589,7 +582,7 @@ namespace AlapSB
 
             tray = new NotifyIcon();
             tray.Icon = Icon ?? SystemIcons.Application;
-            tray.Text = "AlapSB · by Alpha";
+            tray.Text = "AlapSB";
             tray.ContextMenuStrip = tm;
             tray.Visible = true;
             tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) ShowMain(); };
