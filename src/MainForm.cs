@@ -499,8 +499,7 @@ namespace AlapSB
                 MessageBox.Show(this, "AlapSB v1.0\nSoundboard ringan untuk streaming.", "Tentang AlapSB",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
-            m.Items.Add("Reset Semua Soundboard (Hapus Cache)").Click += delegate { ResetCache(); };
-            var uninst = m.Items.Add("Uninstall AlapSB (Hapus Total)");
+            var uninst = m.Items.Add("Uninstall");
             uninst.Tag = "danger";
             uninst.Click += delegate { UninstallApp(); };
             m.Items.Add(new ToolStripSeparator());
@@ -521,43 +520,10 @@ namespace AlapSB
             }
         }
 
-        void ResetCache()
-        {
-            var res = MessageBox.Show(this, 
-                "Are you sure you want to reset all soundboards?\n\nSemua data soundboard, preset, dan file audio di cache akan dibersihkan.", 
-                "Reset Cache Soundboard", 
-                MessageBoxButtons.YesNo, 
-                MessageBoxIcon.Warning);
-
-            if (res != DialogResult.Yes) return;
-
-            try
-            {
-                if (engine != null) engine.StopAll();
-                cfg.Presets.Clear();
-                cfg.Normalize();
-                Save();
-
-                if (Directory.Exists(Storage.SoundsDir))
-                {
-                    foreach (var f in Directory.GetFiles(Storage.SoundsDir))
-                    {
-                        try { File.Delete(f); } catch { }
-                    }
-                }
-                RebuildCards();
-                MessageBox.Show(this, "Cache dan semua suara berhasil dibersihkan!", "AlapSB", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "Gagal mereset cache: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
         void UninstallApp()
         {
             var res = MessageBox.Show(this,
-                "Are you sure you want to uninstall AlapSB?\n\nSemua cache, preset soundboard, dan file aplikasi (.exe) akan dihapus bersih dari perangkatmu.",
+                "Are you sure you want to uninstall AlapSB?",
                 "Uninstall AlapSB",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -565,7 +531,7 @@ namespace AlapSB
             if (res != DialogResult.Yes) return;
 
             MessageBox.Show(this,
-                "Terima kasih sudah mencoba AlapSB!\n\nSampai jumpa lagi di live stream berikutnya! 👋\nSemoga hari-harimu menyenangkan!",
+                "Terima kasih sudah menggunakan AlapSB!\n\nSampai jumpa lagi di live stream berikutnya! 👋",
                 "Selamat Tinggal!",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
