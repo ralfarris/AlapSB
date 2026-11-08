@@ -499,6 +499,10 @@ namespace AlapSB
                 MessageBox.Show(this, "AlapSB v1.0\nSoundboard ringan untuk streaming.", "Tentang AlapSB",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
+            m.Items.Add("Reset Semua Soundboard (Hapus Cache)").Click += delegate { ResetCache(); };
+            var uninst = m.Items.Add("Uninstall AlapSB (Hapus Total)");
+            uninst.Tag = "danger";
+            uninst.Click += delegate { UninstallApp(); };
             m.Items.Add(new ToolStripSeparator());
             var quit = m.Items.Add("Keluar");
             quit.Tag = "danger";
@@ -515,6 +519,83 @@ namespace AlapSB
                 cfg.StopMods = f.Mods;
                 Save();
             }
+        }
+
+        void ResetCache()
+        {
+            var res = MessageBox.Show(this, 
+                "Are you sure you want to reset all soundboards?\n\nSemua data soundboard, preset, dan file audio di cache akan dibersihkan.", 
+                "Reset Cache Soundboard", 
+                MessageBoxButtons.YesNo, 
+                MessageBoxIcon.Warning);
+
+            if (res != DialogResult.Yes) return;
+
+            try
+            {
+                if (engine != null) engine.StopAll();
+                cfg.Presets.Clear();
+                cfg.Normalize();
+                Save();
+
+                if (Directory.Exists(Storage.SoundsDir))
+                {
+                    foreach (var f in Directory.GetFiles(Storage.SoundsDir))
+                    {
+                        try { File.Delete(f); } catch { }
+                    }
+                }
+                RebuildCards();
+                MessageBox.Show(this, "Cache dan semua suara berhasil dibersihkan!", "AlapSB", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Gagal mereset cache: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        void UninstallApp()
+        {
+            var res = MessageBox.Show(this,
+                "Are you sure you want to uninstall AlapSB?\n\nSemua cache, preset soundboard, dan file aplikasi (.exe) akan dihapus bersih dari perangkatmu.",
+                "Uninstall AlapSB",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (res != DialogResult.Yes) return;
+
+            MessageBox.Show(this,
+                "Terima kasih sudah mencoba AlapSB!\n\nSampai jumpa lagi di live stream berikutnya! 👋\nSemoga hari-harimu menyenangkan!",
+                "Selamat Tinggal!",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+
+            try
+            {
+                if (engine != null) engine.StopAll();
+                if (hook != null) hook.Dispose();
+                if (tray != null) { tray.Visible = false; tray.Dispose(); }
+
+                string exePath = Application.ExecutablePath;
+                string exeDir = Path.GetDirectoryName(exePath);
+                string jsonPath = Storage.ConfigPath;
+                string soundsDir = Storage.SoundsDir;
+
+                // Script self-delete setelah aplikasi exit
+                string cmd = string.Format(
+                    "/c ping 127.0.0.1 -n 2 > nul & del /f /q \"{0}\" & if exist \"{1}\" del /f /q \"{1}\" & if exist \"{2}\" rmdir /s /q \"{2}\"",
+                    exePath, jsonPath, soundsDir);
+
+                var psi = new ProcessStartInfo("cmd.exe", cmd)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                Process.Start(psi);
+            }
+            catch { }
+
+            ExitApp();
         }
 
         static bool IsAdmin()
