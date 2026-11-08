@@ -53,7 +53,7 @@ namespace AlapSB
         {
             Presets = new List<Preset>();
             MasterVolume = 80;
-            CloseToTray = true;
+            CloseToTray = false;
         }
 
         public void Normalize()

@@ -140,6 +140,7 @@ namespace AlapSB
         public const string Save = "\uE74E";
         public const string Keyboard = "\uE765";
         public const string Music = "\uE8D6";
+        public const string Power = "\uE7E8";
     }
 
     static class Keyb

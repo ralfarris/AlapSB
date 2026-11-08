@@ -23,12 +23,11 @@ namespace AlapSB
         KeyHook hook;
         PaintPanel header, tip, status;
         BufferedFlow flow;
-        FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn;
+        FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn, exitBtn;
         Slider master;
         NotifyIcon tray;
         ContextMenuStrip menu;
         Timer statsTimer, saveTimer;
-        bool exiting;
         long memMb;
         string flash;
         DateTime flashUntil;
@@ -115,8 +114,10 @@ namespace AlapSB
             stopBtn.Click += delegate { if (engine != null) engine.StopAll(); };
             settingsBtn = new FlatButton("", G.Settings, BtnKind.Secondary);
             settingsBtn.Click += delegate { ShowSettings(); };
+            exitBtn = new FlatButton("Keluar", G.Power, BtnKind.Danger);
+            exitBtn.Click += delegate { ExitApp(); };
 
-            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, master, stopBtn, settingsBtn });
+            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, master, stopBtn, settingsBtn, exitBtn });
 
             var tt = new ToolTip();
             tt.SetToolTip(presetBtn, "Ganti preset soundboard");
@@ -125,6 +126,7 @@ namespace AlapSB
             tt.SetToolTip(delPresetBtn, "Hapus preset");
             tt.SetToolTip(master, "Volume utama");
             tt.SetToolTip(settingsBtn, "Pengaturan");
+            tt.SetToolTip(exitBtn, "Tutup & keluar dari aplikasi");
 
             Controls.Add(flow);
             Controls.Add(status);
@@ -142,6 +144,9 @@ namespace AlapSB
             delPresetBtn.SetBounds(renamePresetBtn.Right + S(8), y, h, h);
 
             int x = header.Width - pad;
+            exitBtn.FitWidth();
+            exitBtn.SetBounds(x - exitBtn.Width, y, exitBtn.Width, h);
+            x = exitBtn.Left - S(8);
             settingsBtn.SetBounds(x - h, y, h, h);
             x = settingsBtn.Left - S(8);
             stopBtn.FitWidth();
@@ -478,10 +483,6 @@ namespace AlapSB
             var m = ResetMenu();
             m.Items.Add("Shortcut Stop Semua:  " + (cfg.StopKey == 0 ? "belum di-set" : Keyb.Combo(cfg.StopKey, cfg.StopMods)))
                 .Click += delegate { SetStopKey(); };
-            var trayItem = new ToolStripMenuItem("Tombol X = sembunyi ke tray");
-            trayItem.Checked = cfg.CloseToTray;
-            trayItem.Click += delegate { cfg.CloseToTray = !cfg.CloseToTray; Save(); };
-            m.Items.Add(trayItem);
             m.Items.Add(new ToolStripSeparator());
             m.Items.Add("Buka folder suara").Click += delegate
             {
@@ -599,25 +600,12 @@ namespace AlapSB
 
         void ExitApp()
         {
-            exiting = true;
             Close();
+            Application.Exit();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (!exiting && cfg.CloseToTray && e.CloseReason == CloseReason.UserClosing)
-            {
-                e.Cancel = true;
-                Hide();
-                if (!cfg.TrayHintShown)
-                {
-                    tray.ShowBalloonTip(3000, "AlapSB masih jalan", "Shortcut tetap aktif. Klik ikon AlapSB di tray untuk membuka lagi.", ToolTipIcon.Info);
-                    cfg.TrayHintShown = true;
-                    Save();
-                }
-                try { Native.EmptyWorkingSet(proc.Handle); } catch { }
-                return;
-            }
             base.OnFormClosing(e);
         }
 
