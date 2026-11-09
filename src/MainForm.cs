@@ -24,10 +24,9 @@ namespace AlapSB
         PaintPanel header, tip, status;
         BufferedFlow flow;
         FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn, exitBtn;
-        Slider master;
         NotifyIcon tray;
         ContextMenuStrip menu;
-        Timer statsTimer, saveTimer;
+        Timer statsTimer;
         long memMb;
         string flash;
         DateTime flashUntil;
@@ -61,9 +60,6 @@ namespace AlapSB
             statsTimer.Interval = 2000;
             statsTimer.Tick += delegate { UpdateStats(); };
             statsTimer.Start();
-            saveTimer = new Timer();
-            saveTimer.Interval = 700;
-            saveTimer.Tick += delegate { saveTimer.Stop(); Save(); };
             UpdateStats();
         }
 
@@ -107,9 +103,6 @@ namespace AlapSB
             delPresetBtn = new FlatButton("", G.Delete, BtnKind.Danger);
             delPresetBtn.Click += delegate { DeletePreset(); };
 
-            master = new Slider();
-            master.Value = cfg.MasterVolume;
-            master.ValueChanged += delegate { cfg.MasterVolume = master.Value; header.Invalidate(); SaveSoon(); };
             stopBtn = new FlatButton("Stop Semua", G.Stop, BtnKind.Secondary);
             stopBtn.Click += delegate { if (engine != null) engine.StopAll(); };
             settingsBtn = new FlatButton("", G.Settings, BtnKind.Secondary);
@@ -117,14 +110,13 @@ namespace AlapSB
             exitBtn = new FlatButton("Keluar", G.Power, BtnKind.Danger);
             exitBtn.Click += delegate { ExitApp(); };
 
-            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, master, stopBtn, settingsBtn, exitBtn });
+            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn, exitBtn });
 
             var tt = new ToolTip();
             tt.SetToolTip(presetBtn, "Ganti preset soundboard");
             tt.SetToolTip(addPresetBtn, "Preset baru");
             tt.SetToolTip(renamePresetBtn, "Ganti nama preset");
             tt.SetToolTip(delPresetBtn, "Hapus preset");
-            tt.SetToolTip(master, "Volume utama");
             tt.SetToolTip(settingsBtn, "Pengaturan");
             tt.SetToolTip(exitBtn, "Tutup & keluar dari aplikasi");
 
@@ -146,12 +138,10 @@ namespace AlapSB
             x = settingsBtn.Left - S(8);
             stopBtn.FitWidth();
             stopBtn.SetBounds(x - stopBtn.Width, y, stopBtn.Width, h);
-            x = stopBtn.Left - S(16);
-            master.SetBounds(x - S(124), y + (h - master.Height) / 2, S(124), master.Height);
 
-            int maxPresetRight = master.Left - S(92);
+            int maxPresetRight = stopBtn.Left - S(24);
             int actionsW = 3 * (h + S(8));
-            int pw = Math.Max(S(120), Math.Min(S(165), maxPresetRight - actionsW - (pad + S(130))));
+            int pw = Math.Max(S(130), Math.Min(S(200), maxPresetRight - actionsW - (pad + S(130))));
             presetBtn.SetBounds(pad + S(130), y, pw, h);
             addPresetBtn.SetBounds(presetBtn.Right + S(8), y, h, h);
             renamePresetBtn.SetBounds(addPresetBtn.Right + S(8), y, h, h);
@@ -180,12 +170,6 @@ namespace AlapSB
             // label preset
             int y = S(98), h = S(38);
             Theme.DrawText(g, "Preset Soundboard", Theme.Semi(9.5f), Theme.Text, new Rectangle(pad, y, S(126), h),
-                TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
-
-            // volume utama
-            int vx = master.Left - S(64);
-            Theme.Glyph(g, cfg.MasterVolume == 0 ? "\uE74F" : G.Volume, Theme.Icons(11f), Theme.Muted, new Rectangle(vx, y, S(20), h));
-            Theme.DrawText(g, cfg.MasterVolume + "%", Theme.Semi(9f), Theme.Text, new Rectangle(vx + S(24), y, S(40), h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
         }
 
@@ -333,7 +317,7 @@ namespace AlapSB
 
         void PlayItem(SoundItem it)
         {
-            if (!engine.Play(it.Id, Storage.Resolve(it.FilePath), it.Volume * cfg.MasterVolume / 100))
+            if (!engine.Play(it.Id, Storage.Resolve(it.FilePath), it.Volume))
                 Flash(it.Name + ": " + engine.LastError);
         }
 
@@ -363,7 +347,7 @@ namespace AlapSB
         {
             bool isNew = item == null;
             var work = isNew ? new SoundItem() : item.Clone();
-            using (var f = new EditForm(work, isNew, engine, cfg.MasterVolume))
+            using (var f = new EditForm(work, isNew, engine, 100))
             {
                 var r = RunDialog(f);
                 if (r == DialogResult.OK)
@@ -689,7 +673,6 @@ namespace AlapSB
             base.OnFormClosed(e);
         }
 
-        void SaveSoon() { saveTimer.Stop(); saveTimer.Start(); }
         void Save() { Storage.Save(cfg); }
     }
 }
