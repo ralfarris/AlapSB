@@ -51,6 +51,16 @@ namespace AlapSB
 
             int volVal = Math.Max(0, Math.Min(1000, volume * 10));
 
+            // Jika alias lama sudah menumpuk terlalu banyak (misal > 30), bersihkan yang tertua
+            if (list.Count > 30)
+            {
+                for (int i = 0; i < 10 && list.Count > 0; i++)
+                {
+                    Send("close " + list[0].Alias, IntPtr.Zero);
+                    list.RemoveAt(0);
+                }
+            }
+
             string alias = "alap" + (++counter);
             int r = Open(file, alias);
             if (r != 0)

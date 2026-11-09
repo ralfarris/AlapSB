@@ -294,17 +294,38 @@ namespace AlapSB
 
         void OnGlobalKey(int vk, int mods)
         {
-            if (cfg.StopKey != 0 && vk == cfg.StopKey && mods == cfg.StopMods) { engine.StopAll(); return; }
+            if (cfg.StopKey != 0 && vk == cfg.StopKey && (cfg.StopMods == 0 || (mods & cfg.StopMods) == cfg.StopMods))
+            {
+                engine.StopAll();
+                return;
+            }
 
             var matches = new List<SoundItem>();
             foreach (var s in Cur.Sounds)
-                if (s.Enabled && s.Key == vk && s.Mods == mods) matches.Add(s);
-            if (matches.Count == 0 && mods != 0) // ramah gamer: shortcut tanpa modifier tetap jalan walau sambil tahan Shift dll.
-                foreach (var s in Cur.Sounds)
-                    if (s.Enabled && s.Key == vk && s.Mods == 0) matches.Add(s);
+            {
+                if (!s.Enabled || s.Key != vk) continue;
+                // Cocok jika modifier tepat sama, ATAU jika sound tidak butuh modifier tapi ditekan bersama modifier lain (misal gamer sedang tahan Shift/Ctrl)
+                if (s.Mods == mods || s.Mods == 0)
+                {
+                    matches.Add(s);
+                }
+            }
+
             if (matches.Count == 0) return;
-            // shortcut sama di beberapa suara => diputar acak salah satu
-            PlayItem(matches[rnd.Next(matches.Count)]);
+
+            // Prioritaskan yang modifier-nya match persis jika ada
+            SoundItem target = null;
+            foreach (var m in matches)
+            {
+                if (m.Mods == mods) { target = m; break; }
+            }
+            if (target == null)
+            {
+                target = matches[rnd.Next(matches.Count)];
+            }
+
+            // Langsung mainkan suaranya (tidak pakai toggle stop) agar setiap trigger pasti bunyi
+            PlayItem(target);
         }
 
         void PlayItem(SoundItem it)

@@ -37,8 +37,9 @@ namespace AlapSB
                 int vk = Marshal.ReadInt32(lParam);
                 if (msg == 0x100 || msg == 0x104)
                 {
-                    // hanya saat pertama ditekan (abaikan auto-repeat)
-                    if (down.Add(vk) && !Suspended && !Keyb.IsModifier(vk))
+                    // Update state tombol ditekan
+                    down.Add(vk);
+                    if (!Suspended && !Keyb.IsModifier(vk))
                     {
                         var h = KeyPressed;
                         if (h != null) h(vk, CurrentMods());
