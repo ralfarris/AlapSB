@@ -269,7 +269,7 @@ namespace AlapSB
             };
             hook = new KeyHook();
             hook.KeyPressed += (vk, mods) => BeginInvoke((Action)(() => OnGlobalKey(vk, mods)));
-            hook.Install();
+            hook.Install(Handle);
             RebuildCards();
         }
 
@@ -329,6 +329,7 @@ namespace AlapSB
 
         protected override void WndProc(ref Message m)
         {
+            if (hook != null) hook.HandleRawMessage(ref m);
             if (engine != null && engine.HandleMessage(ref m)) return;
             if (m.Msg == showMsg && showMsg != 0) { ShowMain(); return; }
             base.WndProc(ref m);
