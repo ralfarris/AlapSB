@@ -138,11 +138,6 @@ namespace AlapSB
         void LayoutHeader()
         {
             int pad = S(24), y = S(98), h = S(38);
-            presetBtn.SetBounds(pad + S(130), y, S(220), h);
-            addPresetBtn.SetBounds(presetBtn.Right + S(8), y, h, h);
-            renamePresetBtn.SetBounds(addPresetBtn.Right + S(8), y, h, h);
-            delPresetBtn.SetBounds(renamePresetBtn.Right + S(8), y, h, h);
-
             int x = header.Width - pad;
             exitBtn.FitWidth();
             exitBtn.SetBounds(x - exitBtn.Width, y, exitBtn.Width, h);
@@ -152,7 +147,15 @@ namespace AlapSB
             stopBtn.FitWidth();
             stopBtn.SetBounds(x - stopBtn.Width, y, stopBtn.Width, h);
             x = stopBtn.Left - S(16);
-            master.SetBounds(x - S(130), y + (h - master.Height) / 2, S(130), master.Height);
+            master.SetBounds(x - S(124), y + (h - master.Height) / 2, S(124), master.Height);
+
+            int maxPresetRight = master.Left - S(92);
+            int actionsW = 3 * (h + S(8));
+            int pw = Math.Max(S(120), Math.Min(S(165), maxPresetRight - actionsW - (pad + S(130))));
+            presetBtn.SetBounds(pad + S(130), y, pw, h);
+            addPresetBtn.SetBounds(presetBtn.Right + S(8), y, h, h);
+            renamePresetBtn.SetBounds(addPresetBtn.Right + S(8), y, h, h);
+            delPresetBtn.SetBounds(renamePresetBtn.Right + S(8), y, h, h);
             header.Invalidate();
         }
 
