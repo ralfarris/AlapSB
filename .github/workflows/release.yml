@@ -24,7 +24,7 @@ jobs:
       - name: Create ZIP Package
         shell: powershell
         run: |
-          Compress-Archive -Path dist\AlapSB.exe -DestinationPath dist\AlapSB-Windows.zip -Force
+          Compress-Archive -Path dist\AlapSB.exe, dist\music -DestinationPath dist\AlapSB-Windows.zip -Force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

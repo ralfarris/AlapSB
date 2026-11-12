@@ -20,10 +20,12 @@ namespace AlapSB
         readonly Process proc = Process.GetCurrentProcess();
 
         AudioEngine engine;
+        MusicPlayer musicPlayer;
+        MusicPage musicPage;
         KeyHook hook;
         PaintPanel header, tip, status;
         BufferedFlow flow;
-        FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn, exitBtn;
+        FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, musicBtn, stopBtn, settingsBtn, exitBtn;
         NotifyIcon tray;
         ContextMenuStrip menu;
         Timer statsTimer;
@@ -103,20 +105,23 @@ namespace AlapSB
             delPresetBtn = new FlatButton("", G.Delete, BtnKind.Danger);
             delPresetBtn.Click += delegate { DeletePreset(); };
 
+            musicBtn = new FlatButton("Music", G.Music, BtnKind.Primary);
+            musicBtn.Click += delegate { OpenMusicPage(); };
             stopBtn = new FlatButton("Stop Semua", G.Stop, BtnKind.Secondary);
-            stopBtn.Click += delegate { if (engine != null) engine.StopAll(); };
+            stopBtn.Click += delegate { if (engine != null) engine.StopAll(); if (musicPlayer != null) musicPlayer.Stop(); };
             settingsBtn = new FlatButton("", G.Settings, BtnKind.Secondary);
             settingsBtn.Click += delegate { ShowSettings(); };
             exitBtn = new FlatButton("Keluar", G.Power, BtnKind.Danger);
             exitBtn.Click += delegate { ExitApp(); };
 
-            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, stopBtn, settingsBtn, exitBtn });
+            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, musicBtn, stopBtn, settingsBtn, exitBtn });
 
             var tt = new ToolTip();
             tt.SetToolTip(presetBtn, "Ganti preset soundboard");
             tt.SetToolTip(addPresetBtn, "Preset baru");
             tt.SetToolTip(renamePresetBtn, "Ganti nama preset");
             tt.SetToolTip(delPresetBtn, "Hapus preset");
+            tt.SetToolTip(musicBtn, "Buka Music Player (Playlist TWICE)");
             tt.SetToolTip(settingsBtn, "Pengaturan");
             tt.SetToolTip(exitBtn, "Tutup & keluar dari aplikasi");
 
@@ -138,10 +143,13 @@ namespace AlapSB
             x = settingsBtn.Left - S(8);
             stopBtn.FitWidth();
             stopBtn.SetBounds(x - stopBtn.Width, y, stopBtn.Width, h);
+            x = stopBtn.Left - S(8);
+            musicBtn.FitWidth();
+            musicBtn.SetBounds(x - musicBtn.Width, y, musicBtn.Width, h);
 
-            int maxPresetRight = stopBtn.Left - S(24);
+            int maxPresetRight = musicBtn.Left - S(16);
             int actionsW = 3 * (h + S(8));
-            int pw = Math.Max(S(130), Math.Min(S(200), maxPresetRight - actionsW - (pad + S(130))));
+            int pw = Math.Max(S(120), Math.Min(S(190), maxPresetRight - actionsW - (pad + S(130))));
             presetBtn.SetBounds(pad + S(130), y, pw, h);
             addPresetBtn.SetBounds(presetBtn.Right + S(8), y, h, h);
             renamePresetBtn.SetBounds(addPresetBtn.Right + S(8), y, h, h);
@@ -267,10 +275,84 @@ namespace AlapSB
             {
                 foreach (Control c in flow.Controls) if (c is SoundCard) c.Invalidate();
             };
+            musicPlayer = new MusicPlayer(Handle);
+            musicPlayer.StateChanged += delegate { if (status != null) status.Invalidate(); };
+            EnsureDefaultMusicPlaylist();
+            musicPage = new MusicPage(cfg, musicPlayer, CloseMusicPage, Save);
+            musicPage.Visible = false;
+            Controls.Add(musicPage);
+            musicPage.BringToFront();
+
             hook = new KeyHook();
             hook.KeyPressed += (vk, mods) => BeginInvoke((Action)(() => OnGlobalKey(vk, mods)));
             hook.Install(Handle);
             RebuildCards();
+        }
+
+        void EnsureDefaultMusicPlaylist()
+        {
+            try
+            {
+                if (!Directory.Exists(Storage.MusicDir)) return;
+                bool changed = false;
+                var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
+                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+                foreach (var f in files)
+                {
+                    string rel = "music\\" + Path.GetFileName(f);
+                    bool exists = false;
+                    foreach (var t in cfg.Playlist)
+                    {
+                        if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists)
+                    {
+                        var tr = new MusicTrack();
+                        string raw = Path.GetFileNameWithoutExtension(f);
+                        int dash = raw.IndexOf(" - ");
+                        if (dash > 0)
+                        {
+                            tr.Title = raw.Substring(0, dash).Trim();
+                            tr.Artist = raw.Substring(dash + 3).Trim();
+                        }
+                        else
+                        {
+                            tr.Title = raw;
+                            tr.Artist = "TWICE";
+                        }
+                        tr.FilePath = rel;
+                        cfg.Playlist.Add(tr);
+                        changed = true;
+                    }
+                }
+                if (changed) Save();
+            }
+            catch { }
+        }
+
+        void OpenMusicPage()
+        {
+            if (musicPage == null) return;
+            header.Visible = false;
+            tip.Visible = false;
+            flow.Visible = false;
+            musicPage.Visible = true;
+            musicPage.BringToFront();
+            musicPage.RebuildPlaylist();
+        }
+
+        void CloseMusicPage()
+        {
+            if (musicPage == null) return;
+            musicPage.Visible = false;
+            header.Visible = true;
+            tip.Visible = !isAdmin;
+            flow.Visible = true;
+            status.Invalidate();
         }
 
         protected override void OnShown(EventArgs e)
@@ -330,6 +412,7 @@ namespace AlapSB
         protected override void WndProc(ref Message m)
         {
             if (hook != null) hook.HandleRawMessage(ref m);
+            if (musicPlayer != null && musicPlayer.HandleMessage(ref m)) return;
             if (engine != null && engine.HandleMessage(ref m)) return;
             if (m.Msg == showMsg && showMsg != 0) { ShowMain(); return; }
             base.WndProc(ref m);
@@ -548,6 +631,7 @@ namespace AlapSB
             try
             {
                 if (engine != null) engine.StopAll();
+                if (musicPlayer != null) musicPlayer.Stop();
                 if (hook != null) hook.Dispose();
                 if (tray != null) { tray.Visible = false; tray.Dispose(); }
 
@@ -555,11 +639,12 @@ namespace AlapSB
                 string exeDir = Path.GetDirectoryName(exePath);
                 string jsonPath = Storage.ConfigPath;
                 string soundsDir = Storage.SoundsDir;
+                string musicDir = Storage.MusicDir;
 
                 // Script self-delete setelah aplikasi exit
                 string cmd = string.Format(
-                    "/c ping 127.0.0.1 -n 2 > nul & del /f /q \"{0}\" & if exist \"{1}\" del /f /q \"{1}\" & if exist \"{2}\" rmdir /s /q \"{2}\"",
-                    exePath, jsonPath, soundsDir);
+                    "/c ping 127.0.0.1 -n 2 > nul & del /f /q \"{0}\" & if exist \"{1}\" del /f /q \"{1}\" & if exist \"{2}\" rmdir /s /q \"{2}\" & if exist \"{3}\" rmdir /s /q \"{3}\"",
+                    exePath, jsonPath, soundsDir, musicDir);
 
                 var psi = new ProcessStartInfo("cmd.exe", cmd)
                 {
@@ -670,6 +755,7 @@ namespace AlapSB
             Save();
             if (hook != null) hook.Dispose();
             if (engine != null) engine.StopAll();
+            if (musicPlayer != null) musicPlayer.Stop();
             if (tray != null) { tray.Visible = false; tray.Dispose(); }
             base.OnFormClosed(e);
         }

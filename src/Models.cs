@@ -39,6 +39,22 @@ namespace AlapSB
         public Preset() { Name = "Default"; Sounds = new List<SoundItem>(); }
     }
 
+    public class MusicTrack
+    {
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Artist { get; set; }
+        public string FilePath { get; set; }
+
+        public MusicTrack()
+        {
+            Id = SoundItem.NewId();
+            Title = "Lagu";
+            Artist = "TWICE";
+            FilePath = "";
+        }
+    }
+
     public class AppConfig
     {
         public List<Preset> Presets { get; set; }
@@ -48,11 +64,18 @@ namespace AlapSB
         public int StopMods { get; set; }
         public bool CloseToTray { get; set; }
         public bool TrayHintShown { get; set; }
+        public List<MusicTrack> Playlist { get; set; }
+        public int MusicVolume { get; set; }
+        public bool MusicLoop { get; set; }
+        public bool MusicShuffle { get; set; }
 
         public AppConfig()
         {
             Presets = new List<Preset>();
+            Playlist = new List<MusicTrack>();
             MasterVolume = 80;
+            MusicVolume = 80;
+            MusicLoop = true;
             CloseToTray = false;
         }
 
@@ -72,8 +95,17 @@ namespace AlapSB
                     s.Volume = Math.Max(0, Math.Min(100, s.Volume));
                 }
             }
+            if (Playlist == null) Playlist = new List<MusicTrack>();
+            foreach (var t in Playlist)
+            {
+                if (string.IsNullOrEmpty(t.Id)) t.Id = SoundItem.NewId();
+                if (string.IsNullOrEmpty(t.Title)) t.Title = "Lagu";
+                if (string.IsNullOrEmpty(t.Artist)) t.Artist = "Artist";
+                if (t.FilePath == null) t.FilePath = "";
+            }
             if (Current < 0 || Current >= Presets.Count) Current = 0;
             MasterVolume = Math.Max(0, Math.Min(100, MasterVolume));
+            if (MusicVolume <= 0 || MusicVolume > 100) MusicVolume = 80;
         }
     }
 
@@ -83,6 +115,7 @@ namespace AlapSB
         public static readonly string DataDir;
         public static readonly string ConfigPath;
         public static readonly string SoundsDir;
+        public static readonly string MusicDir;
 
         static Storage()
         {
@@ -93,6 +126,7 @@ namespace AlapSB
             Directory.CreateDirectory(DataDir);
             ConfigPath = Path.Combine(DataDir, "alapsb.json");
             SoundsDir = Path.Combine(DataDir, "sounds");
+            MusicDir = Path.Combine(DataDir, "music");
         }
 
         static bool CanWrite(string dir)
@@ -166,6 +200,33 @@ namespace AlapSB
                 }
                 File.Copy(full, target);
                 return "sounds\\" + Path.GetFileName(target);
+            }
+            catch { return p; }
+        }
+
+        public static string ImportMusic(string p)
+        {
+            try
+            {
+                string full = Path.GetFullPath(Resolve(p));
+                if (!File.Exists(full)) return p;
+                string musicFull = Path.GetFullPath(MusicDir).TrimEnd('\\') + "\\";
+                if (full.StartsWith(musicFull, StringComparison.OrdinalIgnoreCase))
+                    return "music\\" + full.Substring(musicFull.Length);
+
+                Directory.CreateDirectory(MusicDir);
+                string name = Path.GetFileNameWithoutExtension(full);
+                string ext = Path.GetExtension(full);
+                string target = Path.Combine(MusicDir, name + ext);
+                int i = 2;
+                while (File.Exists(target))
+                {
+                    if (new FileInfo(target).Length == new FileInfo(full).Length)
+                        return "music\\" + Path.GetFileName(target);
+                    target = Path.Combine(MusicDir, name + " (" + i++ + ")" + ext);
+                }
+                File.Copy(full, target);
+                return "music\\" + Path.GetFileName(target);
             }
             catch { return p; }
         }

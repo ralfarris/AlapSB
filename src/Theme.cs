@@ -141,6 +141,12 @@ namespace AlapSB
         public const string Keyboard = "\uE765";
         public const string Music = "\uE8D6";
         public const string Power = "\uE7E8";
+        public const string Back = "\uE72B";
+        public const string Pause = "\uE769";
+        public const string Next = "\uE893";
+        public const string Prev = "\uE892";
+        public const string Shuffle = "\uE8B1";
+        public const string Repeat = "\uE8EE";
     }
 
     static class Keyb
