@@ -1,6 +1,8 @@
 dist/alapsb.json
 dist/sounds/
+dist/music/
 alapsb.json
 sounds/
+music/
 *.tmp
 __pycache__/

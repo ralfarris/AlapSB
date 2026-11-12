@@ -283,7 +283,7 @@ namespace AlapSB
             Theme.Glyph(g, G.Music, Theme.Icons(14f), Color.White, badge);
 
             int tx = badge.Right + S(14);
-            Theme.DrawText(g, "TWICE Playlist  ·  AlapSB Music", Theme.UI(15f, FontStyle.Bold), Theme.Text,
+            Theme.DrawText(g, "Playlist Musik  ·  AlapSB", Theme.UI(15f, FontStyle.Bold), Theme.Text,
                 new Rectangle(tx, S(62), topBar.Width - tx - S(180), S(26)),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
             Theme.DrawText(g, cfg.Playlist.Count + " lagu siap diputar  ·  Musik tetap jalan walau kembali ke Soundboard",

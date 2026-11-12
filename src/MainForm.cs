@@ -121,7 +121,7 @@ namespace AlapSB
             tt.SetToolTip(addPresetBtn, "Preset baru");
             tt.SetToolTip(renamePresetBtn, "Ganti nama preset");
             tt.SetToolTip(delPresetBtn, "Hapus preset");
-            tt.SetToolTip(musicBtn, "Buka Music Player (Playlist TWICE)");
+            tt.SetToolTip(musicBtn, "Buka Music Player");
             tt.SetToolTip(settingsBtn, "Pengaturan");
             tt.SetToolTip(exitBtn, "Tutup & keluar dari aplikasi");
 
@@ -293,7 +293,26 @@ namespace AlapSB
         {
             try
             {
-                if (!Directory.Exists(Storage.MusicDir)) return;
+                Directory.CreateDirectory(Storage.MusicDir);
+
+                // Ekstrak lagu bawaan yang di-bundle di dalam .exe ke folder music
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                const string prefix = "AlapSB.Music.";
+                foreach (var resName in asm.GetManifestResourceNames())
+                {
+                    if (!resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    string fileName = resName.Substring(prefix.Length);
+                    string targetPath = Path.Combine(Storage.MusicDir, fileName);
+                    if (!File.Exists(targetPath))
+                    {
+                        using (var src = asm.GetManifestResourceStream(resName))
+                        using (var dst = File.Create(targetPath))
+                        {
+                            if (src != null) src.CopyTo(dst);
+                        }
+                    }
+                }
+
                 bool changed = false;
                 var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
                 Array.Sort(files, StringComparer.OrdinalIgnoreCase);
