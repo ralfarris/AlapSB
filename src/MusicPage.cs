@@ -547,53 +547,51 @@ namespace AlapSB
             if (addMenu != null) addMenu.Dispose();
             addMenu = Theme.NewMenu();
 
+            // Opsi 1: Pilih file lagu dari komputer
             var browseItem = addMenu.Items.Add("Pilih file lagu dari komputer...");
             browseItem.Tag = "accent";
             browseItem.Click += delegate { BrowseSongs(); };
 
+            // Opsi 2: Lagu Default (TWICE)
             var builtIns = GetBuiltInTwiceFileNames();
-            if (builtIns.Count > 0)
-            {
-                addMenu.Items.Add(new ToolStripSeparator());
-                var twiceMenu = new ToolStripMenuItem("Koleksi Lagu Bawaan (TWICE)");
-                twiceMenu.DropDown.Renderer = new DarkRenderer();
+            var twiceMenu = new ToolStripMenuItem("Pilih dari Lagu Default (TWICE)");
+            twiceMenu.DropDown.Renderer = new DarkRenderer();
 
-                var addAll = twiceMenu.DropDownItems.Add("+ Tambahkan Semua Lagu TWICE");
-                addAll.Tag = "accent";
-                addAll.Click += delegate
+            var addAll = twiceMenu.DropDownItems.Add("+ Masukkan Semua Lagu Default (TWICE)");
+            addAll.Tag = "accent";
+            addAll.Click += delegate
+            {
+                foreach (var fn in builtIns) AddBuiltInTrack(fn);
+                if (onSave != null) onSave();
+                RebuildPlaylist();
+            };
+            twiceMenu.DropDownItems.Add(new ToolStripSeparator());
+
+            foreach (var fn in builtIns)
+            {
+                string fileName = fn;
+                string rel = "music\\" + fileName;
+                bool alreadyIn = false;
+                foreach (var t in cfg.Playlist)
                 {
-                    foreach (var fn in builtIns) AddBuiltInTrack(fn);
+                    if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                    {
+                        alreadyIn = true;
+                        break;
+                    }
+                }
+                string label = Path.GetFileNameWithoutExtension(fileName);
+                var sub = new ToolStripMenuItem(label);
+                sub.Checked = alreadyIn;
+                sub.Click += delegate
+                {
+                    AddBuiltInTrack(fileName);
                     if (onSave != null) onSave();
                     RebuildPlaylist();
                 };
-                twiceMenu.DropDownItems.Add(new ToolStripSeparator());
-
-                foreach (var fn in builtIns)
-                {
-                    string fileName = fn;
-                    string rel = "music\\" + fileName;
-                    bool alreadyIn = false;
-                    foreach (var t in cfg.Playlist)
-                    {
-                        if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
-                        {
-                            alreadyIn = true;
-                            break;
-                        }
-                    }
-                    string label = Path.GetFileNameWithoutExtension(fileName);
-                    var sub = new ToolStripMenuItem(label);
-                    sub.Checked = alreadyIn;
-                    sub.Click += delegate
-                    {
-                        AddBuiltInTrack(fileName);
-                        if (onSave != null) onSave();
-                        RebuildPlaylist();
-                    };
-                    twiceMenu.DropDownItems.Add(sub);
-                }
-                addMenu.Items.Add(twiceMenu);
+                twiceMenu.DropDownItems.Add(sub);
             }
+            addMenu.Items.Add(twiceMenu);
 
             if (cfg.Playlist.Count > 0)
             {

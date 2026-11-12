@@ -313,8 +313,8 @@ namespace AlapSB
                     }
                 }
 
-                // Hanya seed playlist bawaan pertama kali aplikasi dijalankan
-                if (!cfg.MusicSeeded)
+                // Seed playlist bawaan jika belum pernah di-seed ATAU jika playlist kosong namun di alapsb.json lama belum pernah ada lagu bawaan
+                if (!cfg.MusicSeeded || (cfg.Playlist.Count == 0 && asm.GetManifestResourceNames().Length > 0 && !File.Exists(Path.Combine(Storage.DataDir, ".music_user_cleared"))))
                 {
                     var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
                     Array.Sort(files, StringComparer.OrdinalIgnoreCase);
@@ -350,6 +350,7 @@ namespace AlapSB
                         }
                     }
                     cfg.MusicSeeded = true;
+                    try { File.WriteAllText(Path.Combine(Storage.DataDir, ".music_user_cleared"), "1"); } catch { }
                     Save();
                 }
             }

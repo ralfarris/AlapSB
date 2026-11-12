@@ -4,5 +4,6 @@ dist/music/
 alapsb.json
 sounds/
 music/
+!assets/music/
 *.tmp
 __pycache__/
