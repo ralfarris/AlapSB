@@ -143,7 +143,7 @@ namespace AlapSB
             // Top bar
             topBar = new PaintPanel();
             topBar.Dock = DockStyle.Top;
-            topBar.Height = S(118);
+            topBar.Height = S(138);
             topBar.BackColor = Theme.Bg;
             topBar.Paint += PaintTopBar;
             topBar.Resize += delegate { LayoutTopBar(); };
@@ -262,7 +262,7 @@ namespace AlapSB
             backBtn.SetBounds(pad, S(18), backBtn.Width, h);
 
             addSongBtn.FitWidth();
-            addSongBtn.SetBounds(topBar.Width - pad - addSongBtn.Width, S(66), addSongBtn.Width, h);
+            addSongBtn.SetBounds(topBar.Width - pad - addSongBtn.Width, S(78), addSongBtn.Width, h);
             topBar.Invalidate();
         }
 
@@ -274,19 +274,19 @@ namespace AlapSB
             int pad = S(24);
 
             // Album badge gradien ala Spotify playlist header
-            var badge = new Rectangle(pad, S(64), S(42), S(42));
-            using (var path = Theme.Round(badge, S(10)))
+            var badge = new Rectangle(pad, S(74), S(46), S(46));
+            using (var path = Theme.Round(badge, S(11)))
             using (var b = new LinearGradientBrush(badge, Theme.Accent, Theme.Pink, 45f))
                 g.FillPath(b, path);
             Theme.Glyph(g, G.Music, Theme.Icons(14f), Color.White, badge);
 
-            int tx = badge.Right + S(14);
+            int tx = badge.Right + S(16);
             Theme.DrawText(g, "Playlist Musik  ·  AlapSB", Theme.UI(15f, FontStyle.Bold), Theme.Text,
-                new Rectangle(tx, S(62), topBar.Width - tx - S(180), S(26)),
+                new Rectangle(tx, S(70), topBar.Width - tx - S(180), S(28)),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
             Theme.DrawText(g, cfg.Playlist.Count + " lagu siap diputar  ·  Musik tetap jalan walau kembali ke Soundboard",
                 Theme.UI(8.8f), Theme.Muted,
-                new Rectangle(tx, S(88), topBar.Width - tx - S(180), S(18)),
+                new Rectangle(tx, S(102), topBar.Width - tx - S(180), S(20)),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
         }
 
