@@ -313,42 +313,45 @@ namespace AlapSB
                     }
                 }
 
-                bool changed = false;
-                var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
-                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-                foreach (var f in files)
+                // Hanya seed playlist bawaan pertama kali aplikasi dijalankan
+                if (!cfg.MusicSeeded)
                 {
-                    string rel = "music\\" + Path.GetFileName(f);
-                    bool exists = false;
-                    foreach (var t in cfg.Playlist)
+                    var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
+                    Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+                    foreach (var f in files)
                     {
-                        if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                        string rel = "music\\" + Path.GetFileName(f);
+                        bool exists = false;
+                        foreach (var t in cfg.Playlist)
                         {
-                            exists = true;
-                            break;
+                            if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                            {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists)
+                        {
+                            var tr = new MusicTrack();
+                            string raw = Path.GetFileNameWithoutExtension(f);
+                            int dash = raw.IndexOf(" - ");
+                            if (dash > 0)
+                            {
+                                tr.Title = raw.Substring(0, dash).Trim();
+                                tr.Artist = raw.Substring(dash + 3).Trim();
+                            }
+                            else
+                            {
+                                tr.Title = raw;
+                                tr.Artist = "TWICE";
+                            }
+                            tr.FilePath = rel;
+                            cfg.Playlist.Add(tr);
                         }
                     }
-                    if (!exists)
-                    {
-                        var tr = new MusicTrack();
-                        string raw = Path.GetFileNameWithoutExtension(f);
-                        int dash = raw.IndexOf(" - ");
-                        if (dash > 0)
-                        {
-                            tr.Title = raw.Substring(0, dash).Trim();
-                            tr.Artist = raw.Substring(dash + 3).Trim();
-                        }
-                        else
-                        {
-                            tr.Title = raw;
-                            tr.Artist = "TWICE";
-                        }
-                        tr.FilePath = rel;
-                        cfg.Playlist.Add(tr);
-                        changed = true;
-                    }
+                    cfg.MusicSeeded = true;
+                    Save();
                 }
-                if (changed) Save();
             }
             catch { }
         }

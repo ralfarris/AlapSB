@@ -105,12 +105,9 @@ namespace AlapSB
                 new Rectangle(tx, S(28), tw, S(18)),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
 
-            // Tombol hapus kanan (muncul saat hover)
-            if (Hover)
-            {
-                if (hotPart == 2) Theme.Fill(g, rDel, S(8), Theme.Blend(Theme.Field, Theme.Danger, 0.25f));
-                Theme.Glyph(g, G.Delete, Theme.Icons(9.5f), hotPart == 2 ? Theme.Danger : Theme.Muted, rDel);
-            }
+            // Tombol hapus kanan
+            if (hotPart == 2) Theme.Fill(g, rDel, S(8), Theme.Blend(Theme.Field, Theme.Danger, 0.25f));
+            Theme.Glyph(g, G.Delete, Theme.Icons(9.5f), hotPart == 2 ? Theme.Danger : (Hover ? Theme.Text : Theme.Muted), rDel);
         }
     }
 
@@ -129,6 +126,7 @@ namespace AlapSB
         readonly FlatButton prevBtn, playPauseBtn, nextBtn, shuffleBtn, loopBtn;
         readonly Slider seekBar, volBar;
         readonly Timer uiTimer;
+        ContextMenuStrip addMenu;
         bool seeking;
 
         static int S(float v) { return Theme.S(v); }
@@ -153,7 +151,7 @@ namespace AlapSB
             backBtn = new FlatButton("Kembali ke Soundboard", G.Back, BtnKind.Secondary);
             backBtn.Click += delegate { if (onBack != null) onBack(); };
             addSongBtn = new FlatButton("Tambah Lagu", G.Add, BtnKind.Primary);
-            addSongBtn.Click += delegate { BrowseSongs(); };
+            addSongBtn.Click += delegate { ShowAddSongMenu(); };
             topBar.Controls.AddRange(new Control[] { backBtn, addSongBtn });
 
             // Bottom player bar (ala Spotify)
@@ -481,6 +479,137 @@ namespace AlapSB
             cfg.Playlist.Remove(tr);
             if (onSave != null) onSave();
             RebuildPlaylist();
+        }
+
+        static List<string> GetBuiltInTwiceFileNames()
+        {
+            var list = new List<string>();
+            try
+            {
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                const string prefix = "AlapSB.Music.";
+                foreach (var resName in asm.GetManifestResourceNames())
+                {
+                    if (resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        list.Add(resName.Substring(prefix.Length));
+                }
+            }
+            catch { }
+            list.Sort(StringComparer.OrdinalIgnoreCase);
+            return list;
+        }
+
+        static void EnsureBuiltInFileExtracted(string fileName)
+        {
+            try
+            {
+                Directory.CreateDirectory(Storage.MusicDir);
+                string targetPath = Path.Combine(Storage.MusicDir, fileName);
+                if (File.Exists(targetPath)) return;
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var src = asm.GetManifestResourceStream("AlapSB.Music." + fileName))
+                using (var dst = File.Create(targetPath))
+                {
+                    if (src != null) src.CopyTo(dst);
+                }
+            }
+            catch { }
+        }
+
+        void AddBuiltInTrack(string fileName)
+        {
+            EnsureBuiltInFileExtracted(fileName);
+            string rel = "music\\" + fileName;
+            foreach (var t in cfg.Playlist)
+            {
+                if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                    return; // sudah ada di playlist
+            }
+            var tr = new MusicTrack();
+            string raw = Path.GetFileNameWithoutExtension(fileName);
+            int dash = raw.IndexOf(" - ");
+            if (dash > 0)
+            {
+                tr.Title = raw.Substring(0, dash).Trim();
+                tr.Artist = raw.Substring(dash + 3).Trim();
+            }
+            else
+            {
+                tr.Title = raw;
+                tr.Artist = "TWICE";
+            }
+            tr.FilePath = rel;
+            cfg.Playlist.Add(tr);
+        }
+
+        void ShowAddSongMenu()
+        {
+            if (addMenu != null) addMenu.Dispose();
+            addMenu = Theme.NewMenu();
+
+            var browseItem = addMenu.Items.Add("Pilih file lagu dari komputer...");
+            browseItem.Tag = "accent";
+            browseItem.Click += delegate { BrowseSongs(); };
+
+            var builtIns = GetBuiltInTwiceFileNames();
+            if (builtIns.Count > 0)
+            {
+                addMenu.Items.Add(new ToolStripSeparator());
+                var twiceMenu = new ToolStripMenuItem("Koleksi Lagu Bawaan (TWICE)");
+                twiceMenu.DropDown.Renderer = new DarkRenderer();
+
+                var addAll = twiceMenu.DropDownItems.Add("+ Tambahkan Semua Lagu TWICE");
+                addAll.Tag = "accent";
+                addAll.Click += delegate
+                {
+                    foreach (var fn in builtIns) AddBuiltInTrack(fn);
+                    if (onSave != null) onSave();
+                    RebuildPlaylist();
+                };
+                twiceMenu.DropDownItems.Add(new ToolStripSeparator());
+
+                foreach (var fn in builtIns)
+                {
+                    string fileName = fn;
+                    string rel = "music\\" + fileName;
+                    bool alreadyIn = false;
+                    foreach (var t in cfg.Playlist)
+                    {
+                        if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                        {
+                            alreadyIn = true;
+                            break;
+                        }
+                    }
+                    string label = Path.GetFileNameWithoutExtension(fileName);
+                    var sub = new ToolStripMenuItem(label);
+                    sub.Checked = alreadyIn;
+                    sub.Click += delegate
+                    {
+                        AddBuiltInTrack(fileName);
+                        if (onSave != null) onSave();
+                        RebuildPlaylist();
+                    };
+                    twiceMenu.DropDownItems.Add(sub);
+                }
+                addMenu.Items.Add(twiceMenu);
+            }
+
+            if (cfg.Playlist.Count > 0)
+            {
+                addMenu.Items.Add(new ToolStripSeparator());
+                var clearItem = addMenu.Items.Add("Kosongkan Playlist");
+                clearItem.Tag = "danger";
+                clearItem.Click += delegate
+                {
+                    player.Stop();
+                    cfg.Playlist.Clear();
+                    if (onSave != null) onSave();
+                    RebuildPlaylist();
+                };
+            }
+
+            addMenu.Show(addSongBtn, new Point(addSongBtn.Width, addSongBtn.Height + S(4)), ToolStripDropDownDirection.BelowLeft);
         }
 
         void BrowseSongs()
