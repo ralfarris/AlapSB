@@ -39,6 +39,18 @@ namespace AlapSB
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Konversi persentase volume UI (0..100) ke skala MCI (0..1000) dengan kurva logaritmik/eksponensial
+        /// agar di 10% - 50% suaranya halus/pelan dan tidak mengagetkan telinga.
+        /// </summary>
+        public static int ToMciVolume(int percent)
+        {
+            int p = Math.Max(0, Math.Min(100, percent));
+            if (p == 0) return 0;
+            int scaled = (int)Math.Round(Math.Pow(p / 100.0, 2.6) * 650.0);
+            return Math.Max(1, Math.Min(1000, scaled));
+        }
+
         /// <summary>Putar file. Mendukung spam bertumpuk (overlapping): suara lama tetap lanjut sampai habis sambil memutar suara baru.</summary>
         public bool Play(string key, string file, int volume)
         {
@@ -49,7 +61,7 @@ namespace AlapSB
                 return false;
             }
 
-            int volVal = Math.Max(0, Math.Min(1000, volume * 10));
+            int volVal = ToMciVolume(volume);
 
             // Jika alias lama sudah menumpuk terlalu banyak (misal > 30), bersihkan yang tertua
             if (list.Count > 30)

@@ -116,7 +116,7 @@ namespace AlapSB
 
         public void SetVolume(int volume)
         {
-            int v = Math.Max(0, Math.Min(1000, volume * 10));
+            int v = AudioEngine.ToMciVolume(volume);
             Send("setaudio " + Alias + " volume to " + v, IntPtr.Zero);
         }
 

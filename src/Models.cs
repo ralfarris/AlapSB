@@ -74,8 +74,8 @@ namespace AlapSB
         {
             Presets = new List<Preset>();
             Playlist = new List<MusicTrack>();
-            MasterVolume = 80;
-            MusicVolume = 80;
+            MasterVolume = 50;
+            MusicVolume = 50;
             MusicLoop = true;
             CloseToTray = false;
         }
@@ -106,7 +106,7 @@ namespace AlapSB
             }
             if (Current < 0 || Current >= Presets.Count) Current = 0;
             MasterVolume = Math.Max(0, Math.Min(100, MasterVolume));
-            if (MusicVolume <= 0 || MusicVolume > 100) MusicVolume = 80;
+            MusicVolume = Math.Max(0, Math.Min(100, MusicVolume));
         }
     }
 
