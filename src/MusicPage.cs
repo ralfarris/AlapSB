@@ -562,12 +562,12 @@ namespace AlapSB
             browseItem.Tag = "accent";
             browseItem.Click += delegate { BrowseSongs(); };
 
-            // Opsi 2: Lagu Default (TWICE)
+            // Opsi 2: Lagu Default
             var builtIns = GetBuiltInTwiceFileNames();
-            var twiceMenu = new ToolStripMenuItem("Pilih dari Lagu Default (TWICE)");
+            var twiceMenu = new ToolStripMenuItem("Pilih dari Lagu Default");
             twiceMenu.DropDown.Renderer = new DarkRenderer();
 
-            var addAll = twiceMenu.DropDownItems.Add("+ Masukkan Semua Lagu Default (TWICE)");
+            var addAll = twiceMenu.DropDownItems.Add("Masukkan Semua Lagu Default");
             addAll.Tag = "accent";
             addAll.Click += delegate
             {
