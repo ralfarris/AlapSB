@@ -140,20 +140,38 @@ namespace AlapSB
             }
         }
 
-        void CloseInternal()
+        void CloseInternal(bool keepCurrentId = false)
         {
             if (opened) Send("close " + Alias, IntPtr.Zero);
             opened = false;
             paused = false;
             devId = -1;
-            currentId = "";
+            if (!keepCurrentId) currentId = "";
         }
 
         public void Stop()
         {
-            if (!opened) return;
-            CloseInternal();
+            if (!opened) { currentId = ""; return; }
+            CloseInternal(false);
             Raise();
+        }
+
+        public void CheckAutoFinished()
+        {
+            if (!opened || paused) return;
+            string mode = Query("status " + Alias + " mode");
+            if (string.Equals(mode, "stopped", StringComparison.OrdinalIgnoreCase))
+            {
+                int len = LengthMs;
+                int pos = PositionMs;
+                if (len > 0 && pos >= len - 800)
+                {
+                    CloseInternal(true);
+                    Raise();
+                    var f = TrackFinished;
+                    if (f != null) f(this, EventArgs.Empty);
+                }
+            }
         }
 
         public bool HandleMessage(ref Message m)
@@ -165,7 +183,7 @@ namespace AlapSB
             int flag = m.WParam.ToInt32();
             if (flag == 1) // MCI_NOTIFY_SUCCESSFUL (lagu selesai sampai akhir)
             {
-                CloseInternal();
+                CloseInternal(true);
                 Raise();
                 var f = TrackFinished;
                 if (f != null) f(this, EventArgs.Empty);

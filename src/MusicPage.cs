@@ -128,6 +128,7 @@ namespace AlapSB
         readonly Timer uiTimer;
         ContextMenuStrip addMenu;
         bool seeking;
+        int lastPlayedIndex = -1;
 
         static int S(float v) { return Theme.S(v); }
 
@@ -241,6 +242,7 @@ namespace AlapSB
             uiTimer.Interval = 400;
             uiTimer.Tick += delegate
             {
+                player.CheckAutoFinished();
                 if (!Visible) return;
                 if (player.IsOpened && !seeking)
                 {
@@ -327,9 +329,13 @@ namespace AlapSB
 
         int CurrentIndex()
         {
-            if (string.IsNullOrEmpty(player.CurrentId)) return -1;
-            for (int i = 0; i < cfg.Playlist.Count; i++)
-                if (cfg.Playlist[i].Id == player.CurrentId) return i;
+            if (!string.IsNullOrEmpty(player.CurrentId))
+            {
+                for (int i = 0; i < cfg.Playlist.Count; i++)
+                    if (cfg.Playlist[i].Id == player.CurrentId) return i;
+            }
+            if (lastPlayedIndex >= 0 && lastPlayedIndex < cfg.Playlist.Count)
+                return lastPlayedIndex;
             return -1;
         }
 
@@ -423,6 +429,10 @@ namespace AlapSB
         public void PlayTrack(MusicTrack tr)
         {
             if (tr == null) return;
+            for (int i = 0; i < cfg.Playlist.Count; i++)
+            {
+                if (cfg.Playlist[i].Id == tr.Id) { lastPlayedIndex = i; break; }
+            }
             player.PlayTrack(tr.Id, Storage.Resolve(tr.FilePath), cfg.MusicVolume);
         }
 
