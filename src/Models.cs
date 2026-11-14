@@ -69,6 +69,7 @@ namespace AlapSB
         public bool MusicLoop { get; set; }
         public bool MusicShuffle { get; set; }
         public bool MusicSeeded { get; set; }
+        public bool MusicAutoSeedReset { get; set; }
 
         public AppConfig()
         {

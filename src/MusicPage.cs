@@ -491,17 +491,20 @@ namespace AlapSB
             RebuildPlaylist();
         }
 
-        static List<string> GetBuiltInTwiceFileNames()
+        static List<string> GetBuiltInArtistFileNames(string artist)
         {
             var list = new List<string>();
+            string suffix = " - " + artist + ".mp3";
             try
             {
                 var asm = System.Reflection.Assembly.GetExecutingAssembly();
                 const string prefix = "AlapSB.Music.";
                 foreach (var resName in asm.GetManifestResourceNames())
                 {
-                    if (resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                        list.Add(resName.Substring(prefix.Length));
+                    if (!resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    string fn = resName.Substring(prefix.Length);
+                    if (fn.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                        list.Add(fn);
                 }
             }
             catch { }
@@ -562,46 +565,42 @@ namespace AlapSB
             browseItem.Tag = "accent";
             browseItem.Click += delegate { BrowseSongs(); };
 
-            // Opsi 2: Lagu Default
-            var builtIns = GetBuiltInTwiceFileNames();
-            var twiceMenu = new ToolStripMenuItem("Pilih dari Lagu Default");
-            twiceMenu.DropDown.Renderer = new DarkRenderer();
+            // Opsi 2: Pilih dari Lagu Default (3 opsi artis: TWICE, The Weeknd, NIKI)
+            var defaultMenu = new ToolStripMenuItem("Pilih dari Lagu Default");
+            defaultMenu.DropDown.Renderer = new DarkRenderer();
 
-            var addAll = twiceMenu.DropDownItems.Add("Masukkan Semua Lagu Default");
-            addAll.Tag = "accent";
-            addAll.Click += delegate
+            string[] artists = new string[] { "TWICE", "The Weeknd", "NIKI" };
+            foreach (var art in artists)
             {
-                foreach (var fn in builtIns) AddBuiltInTrack(fn);
-                if (onSave != null) onSave();
-                RebuildPlaylist();
-            };
-            twiceMenu.DropDownItems.Add(new ToolStripSeparator());
-
-            foreach (var fn in builtIns)
-            {
-                string fileName = fn;
-                string rel = "music\\" + fileName;
-                bool alreadyIn = false;
-                foreach (var t in cfg.Playlist)
+                string artistName = art;
+                var artistFiles = GetBuiltInArtistFileNames(artistName);
+                bool allIn = artistFiles.Count > 0;
+                foreach (var fn in artistFiles)
                 {
-                    if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                    string rel = "music\\" + fn;
+                    bool found = false;
+                    foreach (var t in cfg.Playlist)
                     {
-                        alreadyIn = true;
-                        break;
+                        if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
+                        {
+                            found = true;
+                            break;
+                        }
                     }
+                    if (!found) { allIn = false; break; }
                 }
-                string label = Path.GetFileNameWithoutExtension(fileName);
-                var sub = new ToolStripMenuItem(label);
-                sub.Checked = alreadyIn;
-                sub.Click += delegate
+
+                var artistItem = new ToolStripMenuItem(artistName);
+                artistItem.Checked = allIn;
+                artistItem.Click += delegate
                 {
-                    AddBuiltInTrack(fileName);
+                    foreach (var fn in artistFiles) AddBuiltInTrack(fn);
                     if (onSave != null) onSave();
                     RebuildPlaylist();
                 };
-                twiceMenu.DropDownItems.Add(sub);
+                defaultMenu.DropDownItems.Add(artistItem);
             }
-            addMenu.Items.Add(twiceMenu);
+            addMenu.Items.Add(defaultMenu);
 
             if (cfg.Playlist.Count > 0)
             {

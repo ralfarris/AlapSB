@@ -295,7 +295,7 @@ namespace AlapSB
             {
                 Directory.CreateDirectory(Storage.MusicDir);
 
-                // Ekstrak lagu bawaan yang di-bundle di dalam .exe ke folder music
+                // Ekstrak lagu bawaan yang di-bundle di dalam .exe ke folder music (tanpa langsung memasukkan ke playlist)
                 var asm = System.Reflection.Assembly.GetExecutingAssembly();
                 const string prefix = "AlapSB.Music.";
                 foreach (var resName in asm.GetManifestResourceNames())
@@ -313,44 +313,11 @@ namespace AlapSB
                     }
                 }
 
-                // Seed playlist bawaan jika belum pernah di-seed ATAU jika playlist kosong namun di alapsb.json lama belum pernah ada lagu bawaan
-                if (!cfg.MusicSeeded || (cfg.Playlist.Count == 0 && asm.GetManifestResourceNames().Length > 0 && !File.Exists(Path.Combine(Storage.DataDir, ".music_user_cleared"))))
+                // Pastikan playlist mulai kosong sampai user memilih sendiri dari menu Tambah Lagu
+                if (!cfg.MusicAutoSeedReset)
                 {
-                    var files = Directory.GetFiles(Storage.MusicDir, "*.mp3");
-                    Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-                    foreach (var f in files)
-                    {
-                        string rel = "music\\" + Path.GetFileName(f);
-                        bool exists = false;
-                        foreach (var t in cfg.Playlist)
-                        {
-                            if (string.Equals(t.FilePath, rel, StringComparison.OrdinalIgnoreCase))
-                            {
-                                exists = true;
-                                break;
-                            }
-                        }
-                        if (!exists)
-                        {
-                            var tr = new MusicTrack();
-                            string raw = Path.GetFileNameWithoutExtension(f);
-                            int dash = raw.IndexOf(" - ");
-                            if (dash > 0)
-                            {
-                                tr.Title = raw.Substring(0, dash).Trim();
-                                tr.Artist = raw.Substring(dash + 3).Trim();
-                            }
-                            else
-                            {
-                                tr.Title = raw;
-                                tr.Artist = "TWICE";
-                            }
-                            tr.FilePath = rel;
-                            cfg.Playlist.Add(tr);
-                        }
-                    }
-                    cfg.MusicSeeded = true;
-                    try { File.WriteAllText(Path.Combine(Storage.DataDir, ".music_user_cleared"), "1"); } catch { }
+                    cfg.Playlist.Clear();
+                    cfg.MusicAutoSeedReset = true;
                     Save();
                 }
             }
