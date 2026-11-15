@@ -59,7 +59,7 @@ namespace AlapSB
             BuildTray();
 
             statsTimer = new Timer();
-            statsTimer.Interval = 2000;
+            statsTimer.Interval = 4000;
             statsTimer.Tick += delegate { UpdateStats(); };
             statsTimer.Start();
             UpdateStats();
@@ -220,8 +220,19 @@ namespace AlapSB
 
         void UpdateStats()
         {
-            try { proc.Refresh(); memMb = proc.WorkingSet64 / (1024 * 1024); } catch { }
-            if (status != null) status.Invalidate();
+            if (WindowState == FormWindowState.Minimized || !Visible) return;
+            long prev = memMb;
+            bool wasFlashing = flash != null;
+            if (flash != null && DateTime.Now >= flashUntil) flash = null;
+            try
+            {
+                Native.EmptyWorkingSet(proc.Handle);
+                proc.Refresh();
+                memMb = Math.Max(1, proc.WorkingSet64 / (1024 * 1024));
+            }
+            catch { }
+            if (status != null && (memMb != prev || wasFlashing != (flash != null)))
+                status.Invalidate();
         }
 
         void Flash(string msg)
@@ -293,27 +304,8 @@ namespace AlapSB
         {
             try
             {
-                Directory.CreateDirectory(Storage.MusicDir);
-
-                // Ekstrak lagu bawaan yang di-bundle di dalam .exe ke folder music (tanpa langsung memasukkan ke playlist)
-                var asm = System.Reflection.Assembly.GetExecutingAssembly();
-                const string prefix = "AlapSB.Music.";
-                foreach (var resName in asm.GetManifestResourceNames())
-                {
-                    if (!resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-                    string fileName = resName.Substring(prefix.Length);
-                    string targetPath = Path.Combine(Storage.MusicDir, fileName);
-                    if (!File.Exists(targetPath))
-                    {
-                        using (var src = asm.GetManifestResourceStream(resName))
-                        using (var dst = File.Create(targetPath))
-                        {
-                            if (src != null) src.CopyTo(dst);
-                        }
-                    }
-                }
-
-                // Pastikan playlist mulai kosong sampai user memilih sendiri dari menu Tambah Lagu
+                // Lazy-load: lagu bawaan hanya diekstrak saat user memilih artis di menu Tambah Lagu,
+                // sehingga saat aplikasi baru dibuka tidak membebani RAM maupun disk.
                 if (!cfg.MusicAutoSeedReset)
                 {
                     cfg.Playlist.Clear();
@@ -349,6 +341,14 @@ namespace AlapSB
         {
             base.OnShown(e);
             if (Cur.Sounds.Count == 0) Flash("Klik \"Tambah Suara\" atau drag & drop file audio ke jendela ini buat mulai.");
+            Native.TrimMemory();
+            UpdateStats();
+        }
+
+        protected override void OnDeactivate(EventArgs e)
+        {
+            base.OnDeactivate(e);
+            Native.TrimMemory();
         }
 
         void OnGlobalKey(int vk, int mods)

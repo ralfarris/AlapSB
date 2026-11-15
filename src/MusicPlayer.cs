@@ -14,6 +14,7 @@ namespace AlapSB
         const string Alias = "alap_music_stream";
         readonly IntPtr hwnd;
         int devId = -1;
+        int cachedLengthMs;
         bool opened;
         bool paused;
         string currentId = "";
@@ -77,6 +78,8 @@ namespace AlapSB
             paused = false;
             currentId = id ?? "";
             devId = Native.mciGetDeviceID(Alias);
+            int len;
+            cachedLengthMs = int.TryParse(Query("status " + Alias + " length"), out len) ? len : 0;
             Raise();
             return true;
         }
@@ -135,8 +138,10 @@ namespace AlapSB
             get
             {
                 if (!opened) return 0;
+                if (cachedLengthMs > 0) return cachedLengthMs;
                 int v;
-                return int.TryParse(Query("status " + Alias + " length"), out v) ? v : 0;
+                cachedLengthMs = int.TryParse(Query("status " + Alias + " length"), out v) ? v : 0;
+                return cachedLengthMs;
             }
         }
 
@@ -146,6 +151,7 @@ namespace AlapSB
             opened = false;
             paused = false;
             devId = -1;
+            cachedLengthMs = 0;
             if (!keepCurrentId) currentId = "";
         }
 

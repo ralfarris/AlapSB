@@ -239,20 +239,21 @@ namespace AlapSB
             player.TrackFinished += delegate { OnTrackEnded(); };
 
             uiTimer = new Timer();
-            uiTimer.Interval = 400;
+            uiTimer.Interval = 800;
             uiTimer.Tick += delegate
             {
-                player.CheckAutoFinished();
-                if (!Visible) return;
-                if (player.IsOpened && !seeking)
+                if (!player.IsPlaying)
                 {
-                    int len = player.LengthMs;
-                    int pos = player.PositionMs;
-                    if (len > 0) seekBar.Value = Math.Max(0, Math.Min(100, (int)((long)pos * 100 / len)));
-                    bottomBar.Invalidate();
+                    uiTimer.Stop();
+                    return;
                 }
+                player.CheckAutoFinished();
+                if (!Visible || !player.IsOpened || seeking) return;
+                int len = player.LengthMs;
+                int pos = player.PositionMs;
+                if (len > 0) seekBar.Value = Math.Max(0, Math.Min(100, (int)((long)pos * 100 / len)));
+                bottomBar.Invalidate();
             };
-            uiTimer.Start();
 
             RebuildPlaylist();
         }
@@ -597,6 +598,7 @@ namespace AlapSB
                     foreach (var fn in artistFiles) AddBuiltInTrack(fn);
                     if (onSave != null) onSave();
                     RebuildPlaylist();
+                    Native.TrimMemory();
                 };
                 defaultMenu.DropDownItems.Add(artistItem);
             }
@@ -652,8 +654,12 @@ namespace AlapSB
 
         public void SyncPlayerUI()
         {
+            if (player.IsPlaying && !uiTimer.Enabled) uiTimer.Start();
+            else if (!player.IsPlaying && uiTimer.Enabled) uiTimer.Stop();
+
             playPauseBtn.Glyph = player.IsPlaying ? G.Pause : G.Play;
             if (!player.IsOpened) seekBar.Value = 0;
+            if (!Visible) return;
             foreach (Control c in listContainer.Controls) c.Invalidate();
             bottomBar.Invalidate();
         }

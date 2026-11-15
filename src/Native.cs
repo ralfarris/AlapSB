@@ -55,12 +55,23 @@ namespace AlapSB
         [DllImport("psapi.dll")]
         public static extern bool EmptyWorkingSet(IntPtr process);
 
+        public static void TrimMemory()
+        {
+            try
+            {
+                GC.Collect(1, GCCollectionMode.Optimized);
+                EmptyWorkingSet(System.Diagnostics.Process.GetCurrentProcess().Handle);
+            }
+            catch { }
+        }
+
         [DllImport("shell32.dll", SetLastError = true)]
         public static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
         public const int WM_INPUT = 0x00FF;
         public const int RIDEV_INPUTSINK = 0x00000100;
         public const int RID_INPUT = 0x10000003;
+        static readonly IntPtr rawBuf = Marshal.AllocHGlobal(256);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RAWINPUTDEVICE
@@ -97,25 +108,19 @@ namespace AlapSB
             try
             {
                 uint headerSize = (uint)(8 + IntPtr.Size * 2);
-                uint size = 0;
-                if (GetRawInputData(lParam, RID_INPUT, IntPtr.Zero, ref size, headerSize) != 0 || size == 0 || size > 256)
+                uint size = 256;
+                if (GetRawInputData(lParam, RID_INPUT, rawBuf, ref size, headerSize) == unchecked((uint)-1) || size == 0 || size > 256)
                     return false;
-                IntPtr ptr = Marshal.AllocHGlobal((int)size);
-                try
-                {
-                    if (GetRawInputData(lParam, RID_INPUT, ptr, ref size, headerSize) != size) return false;
-                    int dwType = Marshal.ReadInt32(ptr, 0);
-                    if (dwType != 1) return false; // 1 = RIM_TYPEKEYBOARD
-                    int off = (int)headerSize;
-                    ushort flags = (ushort)Marshal.ReadInt16(ptr, off + 2);
-                    ushort vkey = (ushort)Marshal.ReadInt16(ptr, off + 6);
-                    uint msg = (uint)Marshal.ReadInt32(ptr, off + 8);
-                    if (vkey == 0 || vkey == 0xFF) return false;
-                    vk = vkey;
-                    isDown = (flags & 1) == 0 && (msg == 0x0100 || msg == 0x0104);
-                    return true;
-                }
-                finally { Marshal.FreeHGlobal(ptr); }
+                int dwType = Marshal.ReadInt32(rawBuf, 0);
+                if (dwType != 1) return false; // 1 = RIM_TYPEKEYBOARD
+                int off = (int)headerSize;
+                ushort flags = (ushort)Marshal.ReadInt16(rawBuf, off + 2);
+                ushort vkey = (ushort)Marshal.ReadInt16(rawBuf, off + 6);
+                uint msg = (uint)Marshal.ReadInt32(rawBuf, off + 8);
+                if (vkey == 0 || vkey == 0xFF) return false;
+                vk = vkey;
+                isDown = (flags & 1) == 0 && (msg == 0x0100 || msg == 0x0104);
+                return true;
             }
             catch { return false; }
         }
