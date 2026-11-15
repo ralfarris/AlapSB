@@ -15,11 +15,25 @@ namespace AlapSB
         const int WH_KEYBOARD_LL = 13;
         IntPtr hook = IntPtr.Zero;
         Native.LowLevelKeyboardProc proc;
-        readonly Dictionary<int, int> lastFireTick = new Dictionary<int, int>();
+        readonly int[] lastFireTick = new int[256];
+        readonly bool[] watchedKeys = new bool[256];
 
         public bool Suspended;
         public event Action<int, int> KeyPressed;
         public bool Active { get { return hook != IntPtr.Zero; } }
+
+        public void UpdateWatchedKeys(List<SoundItem> sounds, int stopKey)
+        {
+            Array.Clear(watchedKeys, 0, watchedKeys.Length);
+            if (stopKey > 0 && stopKey < 256) watchedKeys[stopKey] = true;
+            if (sounds == null) return;
+            for (int i = 0; i < sounds.Count; i++)
+            {
+                var s = sounds[i];
+                if (s.Enabled && s.Key > 0 && s.Key < 256)
+                    watchedKeys[NormalizeVk(s.Key)] = true;
+            }
+        }
 
         public void Install(IntPtr hwnd)
         {
@@ -44,12 +58,13 @@ namespace AlapSB
 
         void DispatchKey(int vk)
         {
+            if (Suspended) return;
             vk = NormalizeVk(vk);
-            if (Suspended || Keyb.IsModifier(vk)) return;
+            if ((uint)vk >= 256 || !watchedKeys[vk]) return;
 
             int now = Environment.TickCount;
-            int prev;
-            if (lastFireTick.TryGetValue(vk, out prev) && unchecked(now - prev) < 35)
+            int prev = lastFireTick[vk];
+            if (prev != 0 && unchecked(now - prev) < 35)
                 return; // Cegah double-fire antara WH_KEYBOARD_LL & WM_INPUT
             lastFireTick[vk] = now;
 

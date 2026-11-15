@@ -383,8 +383,15 @@ namespace AlapSB
         CardPart hot;
         Rectangle rToggle, rEdit, rPlay;
         bool missing;
+        bool lastRenderedPlaying;
 
         public event EventHandler PlayClicked, EditClicked, ToggleClicked;
+
+        public void SyncPlayingState()
+        {
+            bool cur = isPlaying != null && isPlaying(Item.Id);
+            if (cur != lastRenderedPlaying) Invalidate();
+        }
 
         public SoundCard(SoundItem item, Func<string, bool> playing)
         {
@@ -454,6 +461,7 @@ namespace AlapSB
             g.Clear(BackColor);
             Theme.HQ(g);
             bool playing = isPlaying != null && isPlaying(Item.Id);
+            lastRenderedPlaying = playing;
             bool on = Item.Enabled;
 
             var r = new RectangleF(0.75f, 0.75f, Width - 2f, Height - 2f);

@@ -256,7 +256,7 @@ namespace AlapSB
                 var card = new SoundCard(item, IsPlaying);
                 card.PlayClicked += delegate { TogglePlay(item); };
                 card.EditClicked += delegate { EditItem(item); };
-                card.ToggleClicked += delegate { item.Enabled = !item.Enabled; Save(); card.Invalidate(); };
+                card.ToggleClicked += delegate { item.Enabled = !item.Enabled; Save(); if (hook != null) hook.UpdateWatchedKeys(Cur.Sounds, cfg.StopKey); card.Invalidate(); };
                 card.MouseUp += (s, e) => { if (e.Button == MouseButtons.Right) ShowCardMenu(card, e.Location); };
                 HookDrop(card);
                 flow.Controls.Add(card);
@@ -269,6 +269,7 @@ namespace AlapSB
 
             presetBtn.Text = Cur.Name;
             delPresetBtn.Enabled = cfg.Presets.Count > 1;
+            if (hook != null) hook.UpdateWatchedKeys(Cur.Sounds, cfg.StopKey);
             status.Invalidate();
         }
 
@@ -284,15 +285,16 @@ namespace AlapSB
             engine = new AudioEngine(Handle);
             engine.Changed += delegate
             {
-                foreach (Control c in flow.Controls) if (c is SoundCard) c.Invalidate();
+                if (WindowState == FormWindowState.Minimized || !flow.Visible) return;
+                foreach (Control c in flow.Controls)
+                {
+                    var sc = c as SoundCard;
+                    if (sc != null) sc.SyncPlayingState();
+                }
             };
             musicPlayer = new MusicPlayer(Handle);
-            musicPlayer.StateChanged += delegate { if (status != null) status.Invalidate(); };
+            musicPlayer.StateChanged += delegate { if (status != null && Visible && WindowState != FormWindowState.Minimized) status.Invalidate(); };
             EnsureDefaultMusicPlaylist();
-            musicPage = new MusicPage(cfg, musicPlayer, CloseMusicPage, Save);
-            musicPage.Visible = false;
-            Controls.Add(musicPage);
-            musicPage.BringToFront();
 
             hook = new KeyHook();
             hook.KeyPressed += (vk, mods) => BeginInvoke((Action)(() => OnGlobalKey(vk, mods)));
@@ -318,7 +320,11 @@ namespace AlapSB
 
         void OpenMusicPage()
         {
-            if (musicPage == null) return;
+            if (musicPage == null)
+            {
+                musicPage = new MusicPage(cfg, musicPlayer, CloseMusicPage, Save);
+                Controls.Add(musicPage);
+            }
             header.Visible = false;
             tip.Visible = false;
             flow.Visible = false;
@@ -598,6 +604,7 @@ namespace AlapSB
                 if (RunDialog(f) != DialogResult.OK) return;
                 cfg.StopKey = f.Key;
                 cfg.StopMods = f.Mods;
+                if (hook != null) hook.UpdateWatchedKeys(Cur.Sounds, cfg.StopKey);
                 Save();
             }
         }

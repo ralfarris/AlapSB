@@ -492,23 +492,26 @@ namespace AlapSB
             RebuildPlaylist();
         }
 
+        static readonly string[] embeddedResNames = GetEmbeddedResNames();
+
+        static string[] GetEmbeddedResNames()
+        {
+            try { return System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceNames(); }
+            catch { return new string[0]; }
+        }
+
         static List<string> GetBuiltInArtistFileNames(string artist)
         {
             var list = new List<string>();
             string suffix = " - " + artist + ".mp3";
-            try
+            const string prefix = "AlapSB.Music.";
+            foreach (var resName in embeddedResNames)
             {
-                var asm = System.Reflection.Assembly.GetExecutingAssembly();
-                const string prefix = "AlapSB.Music.";
-                foreach (var resName in asm.GetManifestResourceNames())
-                {
-                    if (!resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-                    string fn = resName.Substring(prefix.Length);
-                    if (fn.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                        list.Add(fn);
-                }
+                if (!resName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                string fn = resName.Substring(prefix.Length);
+                if (fn.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                    list.Add(fn);
             }
-            catch { }
             list.Sort(StringComparer.OrdinalIgnoreCase);
             return list;
         }
