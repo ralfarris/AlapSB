@@ -208,6 +208,7 @@ namespace AlapSB
             volBar.ValueChanged += delegate
             {
                 cfg.MusicVolume = volBar.Value;
+                cfg.MasterVolume = volBar.Value;
                 player.SetVolume(cfg.MusicVolume);
                 bottomBar.Invalidate();
                 if (onSave != null) onSave();
@@ -377,6 +378,13 @@ namespace AlapSB
             Theme.DrawText(g, cfg.MusicVolume + "%", Theme.Semi(8.5f), Theme.Text,
                 new Rectangle(vx + S(20), volBar.Top, S(36), volBar.Height),
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+        }
+
+        public void SyncVolume()
+        {
+            if (volBar != null && volBar.Value != cfg.MusicVolume)
+                volBar.Value = cfg.MusicVolume;
+            if (bottomBar != null) bottomBar.Invalidate();
         }
 
         public void RebuildPlaylist()
