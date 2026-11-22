@@ -1,8 +1,8 @@
 # AlapSB
 
-Soundboard desktop super ringan (~62 KB, tanpa Electron/Chromium) untuk streaming & gaming di Windows.
+Soundboard & Music Player desktop super ringan (tanpa Electron/Chromium) untuk streaming & gaming di Windows.
 
-[![Download Latest Release](https://img.shields.io/github/v/release/ralfarris/AlapSB?label=Download%20AlapSB&style=for-the-badge&color=7c5cff)](https://github.com/ralfarris/AlapSB/releases/latest)
+[![Download Latest Release](https://img.shields.io/github/v/release/ralfarris/AlapSB?label=Download%20AlapSB&style=for-the-badge&color=7c5cff&cacheSeconds=60&v=1.1.11)](https://github.com/ralfarris/AlapSB/releases/latest)
 
 ## Cara Menggunakan (Untuk Pengguna Langsung)
 1. Buka halaman [**GitHub Releases**](https://github.com/ralfarris/AlapSB/releases/latest).

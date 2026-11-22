@@ -214,7 +214,7 @@ namespace AlapSB
             Theme.DrawText(g, left, Theme.UI(8.5f), fl ? Theme.Text : Theme.Muted,
                 new Rectangle(pad + d + S(10), 0, status.Width - pad * 2 - S(220), h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
-            Theme.DrawText(g, "AlapSB v1.0", Theme.Semi(8.5f), Theme.Muted, new Rectangle(0, 0, status.Width - pad, h),
+            Theme.DrawText(g, "AlapSB v1.1.11", Theme.Semi(8.5f), Theme.Muted, new Rectangle(0, 0, status.Width - pad, h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.SingleLine);
         }
 
@@ -601,7 +601,7 @@ namespace AlapSB
             }
             m.Items.Add("Tentang AlapSB").Click += delegate
             {
-                MessageBox.Show(this, "AlapSB v1.0\nSoundboard ringan untuk streaming.", "Tentang AlapSB",
+                MessageBox.Show(this, "AlapSB v1.1.11\nSoundboard & Music Player ringan untuk streaming.", "Tentang AlapSB",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
             var uninst = m.Items.Add("Uninstall");
