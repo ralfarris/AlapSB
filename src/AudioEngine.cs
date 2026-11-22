@@ -12,29 +12,18 @@ namespace AlapSB
     /// </summary>
     class AudioEngine
     {
-        class Inst { public string Alias; public string Key; public int DevId; public int BaseVol; }
+        class Inst { public string Alias; public string Key; public int DevId; }
 
         public const int MM_MCINOTIFY = 0x3B9;
 
         readonly IntPtr hwnd;
         readonly List<Inst> list = new List<Inst>();
         int counter;
-        int masterVol = 50;
 
         public event EventHandler Changed;
         public string LastError = "";
 
         public AudioEngine(IntPtr notifyWindow) { hwnd = notifyWindow; }
-
-        public void SetMasterVolume(int mv)
-        {
-            masterVol = Math.Max(0, Math.Min(100, mv));
-            for (int i = 0; i < list.Count; i++)
-            {
-                int v = ToMciVolume(list[i].BaseVol * masterVol / 100);
-                Send("setaudio " + list[i].Alias + " volume to " + v, IntPtr.Zero);
-            }
-        }
 
         static int Send(string cmd, IntPtr cb) { return Native.mciSendString(cmd, null, 0, cb); }
 
@@ -72,7 +61,7 @@ namespace AlapSB
                 return false;
             }
 
-            int volVal = ToMciVolume(volume * masterVol / 100);
+            int volVal = ToMciVolume(volume);
 
             // Jika alias lama sudah menumpuk terlalu banyak (misal > 30), bersihkan yang tertua
             if (list.Count > 30)
@@ -112,7 +101,6 @@ namespace AlapSB
             inst.Alias = alias;
             inst.Key = key;
             inst.DevId = Native.mciGetDeviceID(alias);
-            inst.BaseVol = volume;
             list.Add(inst);
             Raise();
             return true;

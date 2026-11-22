@@ -130,6 +130,8 @@ namespace AlapSB
         bool seeking;
         int lastPlayedIndex = -1;
 
+        public PaintPanel BottomBar { get { return bottomBar; } }
+
         static int S(float v) { return Theme.S(v); }
 
         public MusicPage(AppConfig config, MusicPlayer musicPlayer, Action backCallback, Action saveCallback)
@@ -208,7 +210,6 @@ namespace AlapSB
             volBar.ValueChanged += delegate
             {
                 cfg.MusicVolume = volBar.Value;
-                cfg.MasterVolume = volBar.Value;
                 player.SetVolume(cfg.MusicVolume);
                 bottomBar.Invalidate();
                 if (onSave != null) onSave();
@@ -233,7 +234,6 @@ namespace AlapSB
             listContainer.Resize += delegate { LayoutTrackRows(); };
 
             Controls.Add(listContainer);
-            Controls.Add(bottomBar);
             Controls.Add(topBar);
 
             player.StateChanged += delegate { SyncPlayerUI(); };
@@ -249,7 +249,7 @@ namespace AlapSB
                     return;
                 }
                 player.CheckAutoFinished();
-                if (!Visible || !player.IsOpened || seeking) return;
+                if (!bottomBar.Visible || !player.IsOpened || seeking) return;
                 int len = player.LengthMs;
                 int pos = player.PositionMs;
                 if (len > 0) seekBar.Value = Math.Max(0, Math.Min(100, (int)((long)pos * 100 / len)));
@@ -670,9 +670,9 @@ namespace AlapSB
 
             playPauseBtn.Glyph = player.IsPlaying ? G.Pause : G.Play;
             if (!player.IsOpened) seekBar.Value = 0;
+            if (bottomBar.Visible) bottomBar.Invalidate();
             if (!Visible) return;
             foreach (Control c in listContainer.Controls) c.Invalidate();
-            bottomBar.Invalidate();
         }
     }
 }

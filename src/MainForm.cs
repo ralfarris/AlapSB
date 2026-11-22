@@ -26,7 +26,6 @@ namespace AlapSB
         PaintPanel header, tip, status;
         BufferedFlow flow;
         FlatButton presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, musicBtn, stopBtn, settingsBtn, exitBtn;
-        Slider mainVolBar;
         NotifyIcon tray;
         ContextMenuStrip menu;
         Timer statsTimer;
@@ -51,7 +50,7 @@ namespace AlapSB
             Font = Theme.UI(9f);
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(S(1000), S(660));
-            MinimumSize = new Size(S(880), S(480));
+            MinimumSize = new Size(S(820), S(480));
             DoubleBuffered = true;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             ShowIcon = true;
@@ -106,20 +105,6 @@ namespace AlapSB
             delPresetBtn = new FlatButton("", G.Delete, BtnKind.Danger);
             delPresetBtn.Click += delegate { DeletePreset(); };
 
-            mainVolBar = new Slider();
-            mainVolBar.Value = cfg.MusicVolume;
-            cfg.MasterVolume = cfg.MusicVolume;
-            mainVolBar.ValueChanged += delegate
-            {
-                cfg.MusicVolume = mainVolBar.Value;
-                cfg.MasterVolume = mainVolBar.Value;
-                if (musicPlayer != null) musicPlayer.SetVolume(cfg.MusicVolume);
-                if (engine != null) engine.SetMasterVolume(cfg.MasterVolume);
-                if (musicPage != null) musicPage.SyncVolume();
-                header.Invalidate();
-                Save();
-            };
-
             musicBtn = new FlatButton("Music", G.Music, BtnKind.Primary);
             musicBtn.Click += delegate { OpenMusicPage(); };
             stopBtn = new FlatButton("Stop Semua", G.Stop, BtnKind.Secondary);
@@ -129,14 +114,13 @@ namespace AlapSB
             exitBtn = new FlatButton("Keluar", G.Power, BtnKind.Danger);
             exitBtn.Click += delegate { ExitApp(); };
 
-            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, mainVolBar, musicBtn, stopBtn, settingsBtn, exitBtn });
+            header.Controls.AddRange(new Control[] { presetBtn, addPresetBtn, renamePresetBtn, delPresetBtn, musicBtn, stopBtn, settingsBtn, exitBtn });
 
             var tt = new ToolTip();
             tt.SetToolTip(presetBtn, "Ganti preset soundboard");
             tt.SetToolTip(addPresetBtn, "Preset baru");
             tt.SetToolTip(renamePresetBtn, "Ganti nama preset");
             tt.SetToolTip(delPresetBtn, "Hapus preset");
-            tt.SetToolTip(mainVolBar, "Volume Soundboard & Musik");
             tt.SetToolTip(musicBtn, "Buka Music Player");
             tt.SetToolTip(settingsBtn, "Pengaturan");
             tt.SetToolTip(exitBtn, "Tutup & keluar dari aplikasi");
@@ -163,12 +147,9 @@ namespace AlapSB
             musicBtn.FitWidth();
             musicBtn.SetBounds(x - musicBtn.Width, y, musicBtn.Width, h);
 
-            x = musicBtn.Left - S(14);
-            mainVolBar.SetBounds(x - S(108), y + (h - mainVolBar.Height) / 2, S(108), mainVolBar.Height);
-
-            int maxPresetRight = mainVolBar.Left - S(68);
+            int maxPresetRight = musicBtn.Left - S(16);
             int actionsW = 3 * (h + S(8));
-            int pw = Math.Max(S(105), Math.Min(S(175), maxPresetRight - actionsW - (pad + S(130))));
+            int pw = Math.Max(S(120), Math.Min(S(190), maxPresetRight - actionsW - (pad + S(130))));
             presetBtn.SetBounds(pad + S(130), y, pw, h);
             addPresetBtn.SetBounds(presetBtn.Right + S(8), y, h, h);
             renamePresetBtn.SetBounds(addPresetBtn.Right + S(8), y, h, h);
@@ -198,15 +179,6 @@ namespace AlapSB
             int y = S(98), h = S(38);
             Theme.DrawText(g, "Preset Soundboard", Theme.Semi(9.5f), Theme.Text, new Rectangle(pad, y, S(126), h),
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
-
-            // volume di halaman utama soundboard
-            if (mainVolBar != null)
-            {
-                int vx = mainVolBar.Left - S(58);
-                Theme.Glyph(g, cfg.MusicVolume == 0 ? "\uE74F" : G.Volume, Theme.Icons(10f), Theme.Muted, new Rectangle(vx, y, S(20), h));
-                Theme.DrawText(g, cfg.MusicVolume + "%", Theme.Semi(8.5f), Theme.Text, new Rectangle(vx + S(20), y, S(38), h),
-                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
-            }
         }
 
         void PaintTip(object sender, PaintEventArgs e)
@@ -311,7 +283,6 @@ namespace AlapSB
             Native.DarkTitle(this);
             if (engine != null) return;
             engine = new AudioEngine(Handle);
-            engine.SetMasterVolume(cfg.MusicVolume);
             engine.Changed += delegate
             {
                 if (WindowState == FormWindowState.Minimized || !flow.Visible) return;
@@ -322,13 +293,25 @@ namespace AlapSB
                 }
             };
             musicPlayer = new MusicPlayer(Handle);
-            musicPlayer.StateChanged += delegate { if (status != null && Visible && WindowState != FormWindowState.Minimized) status.Invalidate(); };
+            musicPlayer.StateChanged += delegate
+            {
+                SyncMusicBarVisibility();
+                if (status != null && Visible && WindowState != FormWindowState.Minimized) status.Invalidate();
+            };
             EnsureDefaultMusicPlaylist();
 
             hook = new KeyHook();
             hook.KeyPressed += (vk, mods) => BeginInvoke((Action)(() => OnGlobalKey(vk, mods)));
             hook.Install(Handle);
             RebuildCards();
+        }
+
+        void SyncMusicBarVisibility()
+        {
+            if (musicPage == null) return;
+            bool show = musicPage.Visible || (musicPlayer != null && musicPlayer.IsOpened);
+            if (musicPage.BottomBar.Visible != show)
+                musicPage.BottomBar.Visible = show;
         }
 
         void EnsureDefaultMusicPlaylist()
@@ -352,14 +335,17 @@ namespace AlapSB
             if (musicPage == null)
             {
                 musicPage = new MusicPage(cfg, musicPlayer, CloseMusicPage, Save);
+                Controls.Add(musicPage.BottomBar);
+                Controls.SetChildIndex(musicPage.BottomBar, Controls.IndexOf(status));
                 Controls.Add(musicPage);
+                Controls.SetChildIndex(musicPage, 0);
             }
             header.Visible = false;
             tip.Visible = false;
             flow.Visible = false;
             musicPage.SyncVolume();
             musicPage.Visible = true;
-            musicPage.BringToFront();
+            SyncMusicBarVisibility();
             musicPage.RebuildPlaylist();
         }
 
@@ -367,10 +353,8 @@ namespace AlapSB
         {
             if (musicPage == null) return;
             musicPage.Visible = false;
-            if (mainVolBar != null && mainVolBar.Value != cfg.MusicVolume) mainVolBar.Value = cfg.MusicVolume;
-            if (engine != null) engine.SetMasterVolume(cfg.MusicVolume);
+            SyncMusicBarVisibility();
             header.Visible = true;
-            header.Invalidate();
             tip.Visible = !isAdmin;
             flow.Visible = true;
             status.Invalidate();
